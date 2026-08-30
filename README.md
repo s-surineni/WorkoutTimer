@@ -41,6 +41,14 @@ From the project root, use Gradle to build and install the app on the active emu
 ./gradlew installDebug --rerun-tasks
 ```
 
+### 3. Fast Rebuild & Install Script
+
+Use the helper script to automatically check for changes, build, and install only when necessary:
+
+```bash
+./scripts/gradle-assemble-install-if-changed.sh
+```
+
 If you prefer to use the Android CLI directly, it requires an APK path, for example:
 
 ```bash
@@ -117,3 +125,12 @@ app/build/reports/androidTests/connected/index.html
 - `app/src/main/java/com/example/workouttimer/` — Application source code (UI, ViewModels, Data layer, Theme)
 - `app/src/test/java/com/example/workouttimer/` — Local unit tests (ViewModel and Repository tests)
 - `app/src/androidTest/java/com/example/workouttimer/` — Compose UI & instrumented tests
+
+---
+
+## Engineering Guidelines & AI Review Standards
+
+This project maintains strict engineering standards regarding Unidirectional Data Flow (UDF), Material 3 best practices, coroutine lifecycle safety, and deterministic testing.
+
+See **[AGENTS.md](AGENTS.md)** for the complete guide and AI code review checklist.
+

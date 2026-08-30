@@ -28,7 +28,7 @@ android {
     buildFeatures {
       compose = true
       aidl = false
-      buildConfig = false
+      buildConfig = true
       shaders = false
     }
 
@@ -61,6 +61,8 @@ dependencies {
   implementation(libs.androidx.compose.ui)
   implementation(libs.androidx.compose.ui.tooling.preview)
   implementation(libs.androidx.compose.material3)
+  // Material icons (extended) for Compose
+  implementation("androidx.compose.material:material-icons-extended")
   // Tooling
   debugImplementation(libs.androidx.compose.ui.tooling)
   // Instrumented tests

@@ -16,7 +16,11 @@ class MainActivity : ComponentActivity() {
 
     enableEdgeToEdge()
     setContent {
-      WorkoutTimerTheme { Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) { MainNavigation() } }
+      WorkoutTimerTheme {
+        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+          MainNavigation()
+        }
+      }
     }
   }
 }
