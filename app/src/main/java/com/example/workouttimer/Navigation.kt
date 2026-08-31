@@ -3,10 +3,12 @@ package com.example.workouttimer
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.example.workouttimer.data.DataRepository
 import com.example.workouttimer.data.DefaultDataRepository
 import com.example.workouttimer.ui.create.CreateTabataScreen
 import com.example.workouttimer.ui.main.MainScreen
@@ -14,7 +16,8 @@ import com.example.workouttimer.ui.main.MainScreenViewModel
 
 @Composable
 fun MainNavigation(
-    viewModel: MainScreenViewModel = viewModel { MainScreenViewModel(DefaultDataRepository()) }
+    repository: DataRepository = (LocalContext.current.applicationContext as? WorkoutTimerApplication)?.repository ?: DefaultDataRepository(),
+    viewModel: MainScreenViewModel = viewModel { MainScreenViewModel(repository) }
 ) {
   val backStack = rememberNavBackStack(Main)
 
