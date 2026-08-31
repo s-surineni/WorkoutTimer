@@ -1,7 +1,6 @@
 package com.example.workouttimer.ui.create
 
-import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -16,7 +15,7 @@ import org.junit.Test
 class CreateTabataScreenTest {
 
   @get:Rule
-  val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+  val composeTestRule = createComposeRule()
 
   @Test
   fun createTabataScreen_rendersCreateModeElements() {

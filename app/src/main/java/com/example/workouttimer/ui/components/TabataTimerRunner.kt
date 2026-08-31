@@ -12,10 +12,11 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.VolumeOff
+import androidx.compose.material.icons.automirrored.filled.VolumeUp
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FastForward
@@ -34,6 +35,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
@@ -52,6 +54,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import com.example.workouttimer.audio.AudioFeedbackManager
+import com.example.workouttimer.audio.NoOpAudioFeedbackManager
+import com.example.workouttimer.audio.ToneAudioFeedbackManager
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
@@ -67,17 +72,24 @@ enum class TabataPhase {
 
 /**
  * Full interactive Tabata Workout Timer Runner that steps through all exercises,
- * work/rest intervals, and round transitions.
+ * work/rest intervals, audio sound cues, and round transitions.
  */
 @Composable
 fun TabataTimerRunner(
     workout: Workout,
     onDismiss: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    audioFeedbackManager: AudioFeedbackManager = remember { ToneAudioFeedbackManager() }
 ) {
     if (workout.exercises.isEmpty()) {
         onDismiss()
         return
+    }
+
+    DisposableEffect(audioFeedbackManager) {
+        onDispose {
+            audioFeedbackManager.release()
+        }
     }
 
     var currentRound by remember { mutableIntStateOf(1) }
@@ -85,6 +97,7 @@ fun TabataTimerRunner(
     var phase by remember { mutableStateOf(TabataPhase.PREPARE) }
     var timeLeft by remember { mutableIntStateOf(3) } // 3s prepare countdown
     var isRunning by remember { mutableStateOf(true) }
+    var isSoundEnabled by remember { mutableStateOf(true) }
 
     val currentExercise = workout.exercises.getOrNull(currentExerciseIndex) ?: workout.exercises.first()
     val nextExercise = when {
@@ -103,34 +116,50 @@ fun TabataTimerRunner(
         }
     }
 
+    fun playPhaseSound(targetPhase: TabataPhase) {
+        if (!isSoundEnabled) return
+        when (targetPhase) {
+            TabataPhase.WORK -> audioFeedbackManager.playWorkStart()
+            TabataPhase.REST, TabataPhase.ROUND_REST -> audioFeedbackManager.playRestStart()
+            TabataPhase.COMPLETED -> audioFeedbackManager.playWorkoutComplete()
+            TabataPhase.PREPARE -> {}
+        }
+    }
+
     // Step logic for moving forward
     fun moveToNext() {
         when (phase) {
             TabataPhase.PREPARE -> {
                 phase = TabataPhase.WORK
                 timeLeft = currentExercise.workSeconds
+                playPhaseSound(TabataPhase.WORK)
             }
             TabataPhase.WORK -> {
                 if (currentExercise.restSeconds > 0) {
                     phase = TabataPhase.REST
                     timeLeft = currentExercise.restSeconds
+                    playPhaseSound(TabataPhase.REST)
                 } else if (currentExerciseIndex + 1 < workout.exercises.size) {
                     currentExerciseIndex += 1
                     phase = TabataPhase.WORK
                     timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+                    playPhaseSound(TabataPhase.WORK)
                 } else if (currentRound < workout.rounds) {
                     if (workout.restBetweenRoundsSeconds > 0) {
                         phase = TabataPhase.ROUND_REST
                         timeLeft = workout.restBetweenRoundsSeconds
+                        playPhaseSound(TabataPhase.ROUND_REST)
                     } else {
                         currentRound += 1
                         currentExerciseIndex = 0
                         phase = TabataPhase.WORK
                         timeLeft = workout.exercises[0].workSeconds
+                        playPhaseSound(TabataPhase.WORK)
                     }
                 } else {
                     phase = TabataPhase.COMPLETED
                     isRunning = false
+                    playPhaseSound(TabataPhase.COMPLETED)
                 }
             }
             TabataPhase.REST -> {
@@ -138,19 +167,23 @@ fun TabataTimerRunner(
                     currentExerciseIndex += 1
                     phase = TabataPhase.WORK
                     timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+                    playPhaseSound(TabataPhase.WORK)
                 } else if (currentRound < workout.rounds) {
                     if (workout.restBetweenRoundsSeconds > 0) {
                         phase = TabataPhase.ROUND_REST
                         timeLeft = workout.restBetweenRoundsSeconds
+                        playPhaseSound(TabataPhase.ROUND_REST)
                     } else {
                         currentRound += 1
                         currentExerciseIndex = 0
                         phase = TabataPhase.WORK
                         timeLeft = workout.exercises[0].workSeconds
+                        playPhaseSound(TabataPhase.WORK)
                     }
                 } else {
                     phase = TabataPhase.COMPLETED
                     isRunning = false
+                    playPhaseSound(TabataPhase.COMPLETED)
                 }
             }
             TabataPhase.ROUND_REST -> {
@@ -158,6 +191,7 @@ fun TabataTimerRunner(
                 currentExerciseIndex = 0
                 phase = TabataPhase.WORK
                 timeLeft = workout.exercises[0].workSeconds
+                playPhaseSound(TabataPhase.WORK)
             }
             TabataPhase.COMPLETED -> {
                 isRunning = false
@@ -170,11 +204,13 @@ fun TabataTimerRunner(
             currentExerciseIndex -= 1
             phase = TabataPhase.WORK
             timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+            playPhaseSound(TabataPhase.WORK)
         } else if (currentRound > 1) {
             currentRound -= 1
             currentExerciseIndex = workout.exercises.lastIndex
             phase = TabataPhase.WORK
             timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+            playPhaseSound(TabataPhase.WORK)
         } else {
             phase = TabataPhase.PREPARE
             timeLeft = 3
@@ -195,6 +231,9 @@ fun TabataTimerRunner(
             delay(1000)
             if (timeLeft > 1) {
                 timeLeft -= 1
+                if (timeLeft in 1..3 && isSoundEnabled) {
+                    audioFeedbackManager.playCountdownTick()
+                }
             } else {
                 moveToNext()
             }
@@ -235,13 +274,13 @@ fun TabataTimerRunner(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top header: Routine title & Close button
+                // Top header: Routine title, Sound Toggle & Close button
                 Row(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Column {
+                    Column(modifier = Modifier.weight(1f, fill = false)) {
                         Text(
                             text = workout.title,
                             style = MaterialTheme.typography.titleLarge,
@@ -254,8 +293,16 @@ fun TabataTimerRunner(
                         )
                     }
 
-                    IconButton(onClick = onDismiss) {
-                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close Timer")
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { isSoundEnabled = !isSoundEnabled }) {
+                            Icon(
+                                imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                                contentDescription = if (isSoundEnabled) "Mute Sound" else "Unmute Sound"
+                            )
+                        }
+                        IconButton(onClick = onDismiss) {
+                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close Timer")
+                        }
                     }
                 }
 
@@ -425,8 +472,8 @@ private fun TabataTimerRunnerPreview() {
                     Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10)
                 )
             ),
-            onDismiss = {}
+            onDismiss = {},
+            audioFeedbackManager = NoOpAudioFeedbackManager()
         )
     }
 }
-

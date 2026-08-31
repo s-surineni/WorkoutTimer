@@ -37,7 +37,20 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 3. Jetpack Compose & Material 3 Best Practices
+## 3. Audio, Haptics & Media Lifecycle Standards
+- **Interface Abstraction**:
+  - Audio and haptic feedback managers must be defined via interfaces (e.g., `AudioFeedbackManager`).
+  - Always provide lightweight `NoOp` implementations (e.g., `NoOpAudioFeedbackManager`) to allow Compose `@Preview`s and JVM unit tests to execute without native hardware dependencies.
+- **Deterministic Resource Lifecycle**:
+  - Encapsulate native audio hardware (such as `ToneGenerator`, `SoundPool`, or `MediaPlayer`) in `DisposableEffect` with `onDispose { manager.release() }` or ViewModel `onCleared()` to prevent resource leaks.
+- **Fail-Safe & Non-Blocking Triggers**:
+  - Audio playback calls must execute asynchronously and be guarded against runtime hardware exceptions so audio failures never interrupt timer progression.
+- **User Mute Controls & Semantics**:
+  - All screens generating audio must expose user-toggleable mute/unmute controls with dynamic, accessible `contentDescription`s (`"Mute Sound"` / `"Unmute Sound"`).
+
+---
+
+## 4. Jetpack Compose & Material 3 Best Practices
 - **Material 3 Ecosystem**:
   - Rely exclusively on standard Material 3 components (`Scaffold`, `TopAppBar`, `FloatingActionButton`, `AlertDialog`, `Card`, `LinearProgressIndicator`, `SuggestionChip`, etc.).
   - Never hardcode ad-hoc colors or typography; always leverage `MaterialTheme.colorScheme` and `MaterialTheme.typography`.
@@ -53,9 +66,9 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 4. Accessibility (a11y) & Mobile Ergonomics
+## 5. Accessibility (a11y) & Mobile Ergonomics
 - **Semantic Content Descriptions**:
-  - Interactive elements (icon buttons, floating action buttons) must provide descriptive `contentDescription` attributes (e.g., `"Add Tabata Workout"`, `"Edit Routine"`, `"Delete Routine"`, `"Navigate back"`).
+  - Interactive elements (icon buttons, floating action buttons) must provide descriptive `contentDescription` attributes (e.g., `"Add Tabata Workout"`, `"Edit Routine"`, `"Delete Routine"`, `"Mute Sound"`, `"Navigate back"`).
   - Purely decorative icons must have `contentDescription = null` to avoid screen reader clutter.
 - **Touch Target Sizing**:
   - Ensure all interactive elements meet the minimum touch target area of **48dp × 48dp**.
@@ -64,7 +77,7 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 5. Form Design & Usability
+## 6. Form Design & Usability
 - **Input Validation & UX**:
   - Validate text inputs inline (e.g. non-empty names, positive duration numbers) and show descriptive `supportingText` and `isError` flags.
   - Provide input sanitization (e.g. `it.filter { it.isDigit() }` for numeric fields).
@@ -73,7 +86,7 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 6. Concurrency, Coroutines & Threading
+## 7. Concurrency, Coroutines & Threading
 - **Structured Concurrency**:
   - Never use `GlobalScope`. Always scope coroutines to `viewModelScope`, `rememberCoroutineScope()`, or `LaunchedEffect`.
 - **Dispatcher Isolation**:
@@ -82,20 +95,20 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 7. Testing Standards
+## 8. Testing Standards
 - **Unit Tests (JVM)**:
-  - All ViewModels, domain logic, and Repositories must be covered by JUnit tests in `app/src/test/`.
+  - All ViewModels, domain logic, Audio Managers, and Repositories must be covered by JUnit tests in `app/src/test/`.
   - Use `kotlinx-coroutines-test` with a `MainDispatcherRule` (`StandardTestDispatcher`) and `advanceUntilIdle()` to ensure deterministic coroutine execution.
   - Test all UI state transitions: initial `Loading`, `Success` with populated data, state after additions, state after edits, state after deletions, and timer state switches.
 - **Instrumented Room & UI Tests**:
   - Test Room database operations and DAOs in `app/src/androidTest/` using in-memory databases (`Room.inMemoryDatabaseBuilder`).
-  - Add/maintain Compose UI tests in `app/src/androidTest/` using `createAndroidComposeRule` verifying node hierarchies, text content, and interactive buttons.
+  - Add/maintain Compose UI tests in `app/src/androidTest/` using `createComposeRule` verifying node hierarchies, text content, interactive buttons, and sound toggles.
 - **Zero Warnings**:
   - Ensure zero compilation warnings or deprecations during Kotlin compilation (`./gradlew compileDebugKotlin compileDebugUnitTestKotlin compileDebugAndroidTestKotlin`).
 
 ---
 
-## 8. Categorized Review Checklist for LLMs & Developers
+## 9. Categorized Review Checklist for LLMs & Developers
 When reviewing or submitting pull requests / code changes in this repository, check against this list:
 
 ### Architecture & UDF
@@ -110,6 +123,12 @@ When reviewing or submitting pull requests / code changes in this repository, ch
 - [ ] Are disk writes and mutations dispatched to `Dispatchers.IO`?
 - [ ] Are complex types safely converted via TypeConverters with error fallbacks?
 - [ ] Are database operations covered by in-memory instrumented tests (`Room.inMemoryDatabaseBuilder`)?
+
+### Audio, Haptics & Media
+- [ ] Are audio/media managers abstracted behind interfaces with NoOp implementations for previews and tests?
+- [ ] Are native audio resources released deterministically via `DisposableEffect` / `onDispose` or ViewModel `onCleared()`?
+- [ ] Are audio playback calls non-blocking and guarded against hardware exceptions?
+- [ ] Are user mute/unmute controls provided with dynamic accessibility labels?
 
 ### Compose Performance & Recomposition
 - [ ] Are list items uniquely keyed in lazy layouts (`key = { it.id }`)?

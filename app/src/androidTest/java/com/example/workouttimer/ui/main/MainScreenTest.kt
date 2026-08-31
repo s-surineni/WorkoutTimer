@@ -1,7 +1,6 @@
 package com.example.workouttimer.ui.main
 
-import androidx.activity.ComponentActivity
-import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -14,7 +13,7 @@ import org.junit.Test
 /** UI tests for [com.example.workouttimer.ui.main.MainScreen]. */
 class MainScreenTest {
 
-  @get:Rule val composeTestRule = createAndroidComposeRule<ComponentActivity>()
+  @get:Rule val composeTestRule = createComposeRule()
 
   @Before
   fun setup() {
