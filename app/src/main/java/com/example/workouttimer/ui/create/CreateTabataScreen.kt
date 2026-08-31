@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
@@ -40,7 +39,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.SuggestionChipDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -67,25 +65,35 @@ import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
 
 /**
- * Full-page screen to configure and create a multi-exercise Tabata routine.
+ * Full-page screen to create a new Tabata routine or edit an existing one.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CreateTabataScreen(
     onNavigateBack: () -> Unit,
     onSaveWorkout: (Workout) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    initialWorkout: Workout? = null
 ) {
-    var title by remember { mutableStateOf("") }
+    val isEditMode = initialWorkout != null
+    var title by remember { mutableStateOf(initialWorkout?.title ?: "") }
     var titleError by remember { mutableStateOf(false) }
-    var rounds by remember { mutableIntStateOf(2) }
-    var restBetweenRoundsText by remember { mutableStateOf("30") }
+    var rounds by remember { mutableIntStateOf(initialWorkout?.rounds ?: 2) }
+    var restBetweenRoundsText by remember { mutableStateOf(initialWorkout?.restBetweenRoundsSeconds?.toString() ?: "30") }
 
     val exercises = remember {
-        mutableStateListOf(
-            Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
-            Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
-        )
+        mutableStateListOf<Exercise>().apply {
+            if (initialWorkout != null) {
+                addAll(initialWorkout.exercises)
+            } else {
+                addAll(
+                    listOf(
+                        Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
+                        Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
+                    )
+                )
+            }
+        }
     }
 
     var newExerciseName by remember { mutableStateOf("") }
@@ -127,12 +135,21 @@ fun CreateTabataScreen(
 
         if (isTitleValid && hasExercises) {
             val restBetweenRounds = restBetweenRoundsText.toIntOrNull() ?: 30
-            val workout = Workout(
-                title = trimmedTitle,
-                rounds = rounds,
-                restBetweenRoundsSeconds = restBetweenRounds,
-                exercises = exercises.toList()
-            )
+            val workout = if (initialWorkout != null) {
+                initialWorkout.copy(
+                    title = trimmedTitle,
+                    rounds = rounds,
+                    restBetweenRoundsSeconds = restBetweenRounds,
+                    exercises = exercises.toList()
+                )
+            } else {
+                Workout(
+                    title = trimmedTitle,
+                    rounds = rounds,
+                    restBetweenRoundsSeconds = restBetweenRounds,
+                    exercises = exercises.toList()
+                )
+            }
             onSaveWorkout(workout)
         }
     }
@@ -141,7 +158,7 @@ fun CreateTabataScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text("Create Tabata Workout") },
+                title = { Text(if (isEditMode) "Edit Tabata Workout" else "Create Tabata Workout") },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
                         Icon(
@@ -182,7 +199,10 @@ fun CreateTabataScreen(
                     ) {
                         Icon(imageVector = Icons.Default.FitnessCenter, contentDescription = null)
                         Spacer(modifier = Modifier.width(8.dp))
-                        Text("Save Tabata Workout", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            text = if (isEditMode) "Update Tabata Workout" else "Save Tabata Workout",
+                            style = MaterialTheme.typography.titleMedium
+                        )
                     }
                 }
             }
@@ -586,3 +606,19 @@ private fun CreateTabataScreenPreview() {
     }
 }
 
+@Preview(showBackground = true)
+@Composable
+private fun EditTabataScreenPreview() {
+    WorkoutTimerTheme {
+        CreateTabataScreen(
+            initialWorkout = Workout(
+                title = "Core HIIT",
+                rounds = 3,
+                restBetweenRoundsSeconds = 30,
+                exercises = listOf(Exercise(name = "Plank", workSeconds = 30, restSeconds = 15))
+            ),
+            onNavigateBack = {},
+            onSaveWorkout = {}
+        )
+    }
+}

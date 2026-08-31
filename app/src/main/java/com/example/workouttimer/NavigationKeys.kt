@@ -8,3 +8,6 @@ data object Main : NavKey
 
 @Serializable
 data object CreateTabata : NavKey
+
+@Serializable
+data class EditTabata(val workoutId: String) : NavKey

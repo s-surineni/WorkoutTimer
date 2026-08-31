@@ -34,6 +34,29 @@ class DefaultDataRepositoryTest {
   }
 
   @Test
+  fun defaultRepository_updateWorkout_updatesMatchingWorkout() = runTest {
+    val original = Workout(
+      id = "w1",
+      title = "Original Title",
+      rounds = 1,
+      exercises = listOf(Exercise(name = "Plank", workSeconds = 20, restSeconds = 10))
+    )
+    val repository = DefaultDataRepository(initialWorkouts = listOf(original))
+
+    val updated = original.copy(
+      title = "Updated Title",
+      rounds = 3
+    )
+
+    repository.updateWorkout(updated)
+
+    val list = repository.workouts.first()
+    assertEquals(1, list.size)
+    assertEquals("Updated Title", list.first().title)
+    assertEquals(3, list.first().rounds)
+  }
+
+  @Test
   fun defaultRepository_removeWorkout_filtersOutMatchingId() = runTest {
     val workout = Workout(id = "w1", title = "Test", exercises = emptyList())
     val repository = DefaultDataRepository(initialWorkouts = listOf(workout))
@@ -44,4 +67,3 @@ class DefaultDataRepositoryTest {
     assertTrue(list.isEmpty())
   }
 }
-

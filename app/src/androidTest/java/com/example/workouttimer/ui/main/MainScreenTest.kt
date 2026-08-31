@@ -2,6 +2,7 @@ package com.example.workouttimer.ui.main
 
 import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import com.example.workouttimer.data.Exercise
@@ -21,6 +22,7 @@ class MainScreenTest {
       MainScreenContent(
         workouts = FAKE_DATA,
         onAddClick = {},
+        onEditClick = {},
         onStartWorkout = {},
         onDeleteWorkout = {}
       )
@@ -37,6 +39,11 @@ class MainScreenTest {
   @Test
   fun addTabataButton_exists() {
     composeTestRule.onNodeWithContentDescription("Add Tabata Workout").assertExists()
+  }
+
+  @Test
+  fun editRoutineButtons_exist() {
+    composeTestRule.onAllNodesWithContentDescription("Edit Routine")[0].assertExists()
   }
 }
 

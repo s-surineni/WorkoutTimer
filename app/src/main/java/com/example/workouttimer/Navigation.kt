@@ -26,6 +26,7 @@ fun MainNavigation(
         entry<Main> {
           MainScreen(
             onAddClick = { backStack.add(CreateTabata) },
+            onEditClick = { workout -> backStack.add(EditTabata(workout.id)) },
             viewModel = viewModel,
             modifier = Modifier.safeDrawingPadding()
           )
@@ -35,6 +36,18 @@ fun MainNavigation(
             onNavigateBack = { backStack.removeLastOrNull() },
             onSaveWorkout = { workout ->
               viewModel.addWorkout(workout)
+              backStack.removeLastOrNull()
+            },
+            modifier = Modifier.safeDrawingPadding()
+          )
+        }
+        entry<EditTabata> { key ->
+          val workout = viewModel.getWorkoutById(key.workoutId)
+          CreateTabataScreen(
+            initialWorkout = workout,
+            onNavigateBack = { backStack.removeLastOrNull() },
+            onSaveWorkout = { updated ->
+              viewModel.updateWorkout(updated)
               backStack.removeLastOrNull()
             },
             modifier = Modifier.safeDrawingPadding()

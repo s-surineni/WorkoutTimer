@@ -43,6 +43,7 @@ import com.example.workouttimer.ui.components.TabataTimerRunner
 @Composable
 fun MainScreen(
     onAddClick: () -> Unit,
+    onEditClick: (Workout) -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainScreenViewModel = viewModel { MainScreenViewModel(DefaultDataRepository()) },
 ) {
@@ -66,6 +67,7 @@ fun MainScreen(
             MainScreenContent(
                 workouts = uiState.data,
                 onAddClick = onAddClick,
+                onEditClick = onEditClick,
                 onStartWorkout = { viewModel.startWorkout(it) },
                 onDeleteWorkout = { viewModel.removeWorkout(it) },
                 modifier = modifier
@@ -88,6 +90,7 @@ fun MainScreen(
 internal fun MainScreenContent(
     workouts: List<Workout>,
     onAddClick: () -> Unit,
+    onEditClick: (Workout) -> Unit,
     onStartWorkout: (Workout) -> Unit,
     onDeleteWorkout: (String) -> Unit,
     modifier: Modifier = Modifier
@@ -158,6 +161,7 @@ internal fun MainScreenContent(
                     TabataRoutineCard(
                         workout = workout,
                         onStart = { onStartWorkout(workout) },
+                        onEdit = { onEditClick(workout) },
                         onDelete = { onDeleteWorkout(workout.id) },
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -184,6 +188,7 @@ fun MainScreenPreview() {
                 )
             ),
             onAddClick = {},
+            onEditClick = {},
             onStartWorkout = {},
             onDeleteWorkout = {}
         )
@@ -197,6 +202,7 @@ fun MainScreenEmptyPreview() {
         MainScreenContent(
             workouts = emptyList(),
             onAddClick = {},
+            onEditClick = {},
             onStartWorkout = {},
             onDeleteWorkout = {}
         )

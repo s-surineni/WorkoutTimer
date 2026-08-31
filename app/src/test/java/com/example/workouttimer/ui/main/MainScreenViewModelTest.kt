@@ -119,6 +119,45 @@ class MainScreenViewModelTest {
   }
 
   @Test
+  fun updateWorkout_updatesExistingWorkoutInRepository() = runTest {
+    val initialWorkout = Workout(
+      id = "w1",
+      title = "Initial HIIT",
+      rounds = 1,
+      exercises = listOf(Exercise(name = "Burpees", workSeconds = 20, restSeconds = 10))
+    )
+    val repository = FakeWorkoutRepository(initial = listOf(initialWorkout))
+    val viewModel = MainScreenViewModel(repository)
+
+    val updatedWorkout = initialWorkout.copy(title = "Updated HIIT", rounds = 4)
+    viewModel.updateWorkout(updatedWorkout)
+
+    val workouts = repository.workouts.first()
+    assertEquals(1, workouts.size)
+    assertEquals("Updated HIIT", workouts.first().title)
+    assertEquals(4, workouts.first().rounds)
+  }
+
+  @Test
+  fun getWorkoutById_returnsMatchingWorkoutWhenStateIsSuccess() = runTest {
+    val workout = Workout(id = "target123", title = "Target", exercises = emptyList())
+    val repository = FakeWorkoutRepository(initial = listOf(workout))
+    val viewModel = MainScreenViewModel(repository)
+
+    backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
+      viewModel.uiState.collect {}
+    }
+    advanceUntilIdle()
+
+    val found = viewModel.getWorkoutById("target123")
+    assertNotNull(found)
+    assertEquals("Target", found?.title)
+
+    val notFound = viewModel.getWorkoutById("nonexistent")
+    assertNull(notFound)
+  }
+
+  @Test
   fun removeWorkout_removesWorkoutFromRepositoryAndStopsActiveIfMatching() = runTest {
     val workout = Workout(
       id = "123",
@@ -166,6 +205,7 @@ private class LoadingWorkoutRepository : DataRepository {
   override val workouts: Flow<List<Workout>> = _workouts.asSharedFlow()
 
   override fun addWorkout(workout: Workout) {}
+  override fun updateWorkout(workout: Workout) {}
   override fun removeWorkout(id: String) {}
 }
 
@@ -173,6 +213,7 @@ private class ErrorWorkoutRepository(val exception: Throwable) : DataRepository 
   override val workouts: Flow<List<Workout>> = flow { throw exception }
 
   override fun addWorkout(workout: Workout) {}
+  override fun updateWorkout(workout: Workout) {}
   override fun removeWorkout(id: String) {}
 }
 
@@ -182,6 +223,10 @@ private class FakeWorkoutRepository(initial: List<Workout> = emptyList()) : Data
 
   override fun addWorkout(workout: Workout) {
     _workouts.update { it + workout }
+  }
+
+  override fun updateWorkout(workout: Workout) {
+    _workouts.update { current -> current.map { if (it.id == workout.id) workout else it } }
   }
 
   override fun removeWorkout(id: String) {

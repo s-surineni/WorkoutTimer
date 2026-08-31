@@ -27,11 +27,25 @@ class MainScreenViewModel(private val dataRepository: DataRepository) : ViewMode
     dataRepository.addWorkout(workout)
   }
 
+  fun updateWorkout(workout: Workout) {
+    if (_activeWorkout.value?.id == workout.id) {
+      _activeWorkout.value = workout
+    }
+    dataRepository.updateWorkout(workout)
+  }
+
   fun removeWorkout(id: String) {
     if (_activeWorkout.value?.id == id) {
       _activeWorkout.value = null
     }
     dataRepository.removeWorkout(id)
+  }
+
+  fun getWorkoutById(id: String): Workout? {
+    val current = uiState.value
+    return if (current is Success) {
+      current.data.find { it.id == id }
+    } else null
   }
 
   fun startWorkout(workout: Workout) {

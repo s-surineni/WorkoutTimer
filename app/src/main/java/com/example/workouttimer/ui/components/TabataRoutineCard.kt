@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.PlayArrow
@@ -47,13 +48,14 @@ import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
 
 /**
- * Card displaying a Tabata workout routine summary, its exercises, and a Start button.
+ * Card displaying a Tabata workout routine summary, its exercises, and Edit/Start/Delete actions.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun TabataRoutineCard(
     workout: Workout,
     onStart: () -> Unit,
+    onEdit: () -> Unit,
     onDelete: () -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -65,7 +67,7 @@ fun TabataRoutineCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Title & Delete button
+            // Header: Title & Action buttons (Edit & Delete)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
@@ -94,12 +96,21 @@ fun TabataRoutineCard(
                     }
                 }
 
-                IconButton(onClick = onDelete) {
-                    Icon(
-                        imageVector = Icons.Default.Delete,
-                        contentDescription = "Delete Routine",
-                        tint = MaterialTheme.colorScheme.error
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = onEdit) {
+                        Icon(
+                            imageVector = Icons.Default.Edit,
+                            contentDescription = "Edit Routine",
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                    }
+                    IconButton(onClick = onDelete) {
+                        Icon(
+                            imageVector = Icons.Default.Delete,
+                            contentDescription = "Delete Routine",
+                            tint = MaterialTheme.colorScheme.error
+                        )
+                    }
                 }
             }
 
@@ -203,9 +214,9 @@ private fun TabataRoutineCardPreview() {
                 )
             ),
             onStart = {},
+            onEdit = {},
             onDelete = {},
             modifier = Modifier.padding(16.dp)
         )
     }
 }
-
