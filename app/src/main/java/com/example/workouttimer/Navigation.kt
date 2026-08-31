@@ -1,17 +1,21 @@
 package com.example.workouttimer
 
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.safeDrawingPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.unit.dp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.ui.NavDisplay
+import com.example.workouttimer.data.DefaultDataRepository
+import com.example.workouttimer.ui.create.CreateTabataScreen
 import com.example.workouttimer.ui.main.MainScreen
+import com.example.workouttimer.ui.main.MainScreenViewModel
 
 @Composable
-fun MainNavigation() {
+fun MainNavigation(
+    viewModel: MainScreenViewModel = viewModel { MainScreenViewModel(DefaultDataRepository()) }
+) {
   val backStack = rememberNavBackStack(Main)
 
   NavDisplay(
@@ -20,7 +24,21 @@ fun MainNavigation() {
     entryProvider =
       entryProvider {
         entry<Main> {
-          MainScreen(onItemClick = { navKey -> backStack.add(navKey) }, modifier = Modifier.safeDrawingPadding().padding(16.dp))
+          MainScreen(
+            onAddClick = { backStack.add(CreateTabata) },
+            viewModel = viewModel,
+            modifier = Modifier.safeDrawingPadding()
+          )
+        }
+        entry<CreateTabata> {
+          CreateTabataScreen(
+            onNavigateBack = { backStack.removeLastOrNull() },
+            onSaveWorkout = { workout ->
+              viewModel.addWorkout(workout)
+              backStack.removeLastOrNull()
+            },
+            modifier = Modifier.safeDrawingPadding()
+          )
         }
       },
   )

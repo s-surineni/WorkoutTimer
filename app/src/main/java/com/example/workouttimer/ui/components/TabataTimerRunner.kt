@@ -1,0 +1,432 @@
+package com.example.workouttimer.ui.components
+
+import androidx.compose.animation.animateColorAsState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.FastForward
+import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.Pause
+import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FilledIconButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.IconButtonDefaults
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
+import androidx.compose.ui.window.DialogProperties
+import com.example.workouttimer.data.Exercise
+import com.example.workouttimer.data.Workout
+import com.example.workouttimer.theme.WorkoutTimerTheme
+import kotlinx.coroutines.delay
+
+enum class TabataPhase {
+    PREPARE,
+    WORK,
+    REST,
+    ROUND_REST,
+    COMPLETED
+}
+
+/**
+ * Full interactive Tabata Workout Timer Runner that steps through all exercises,
+ * work/rest intervals, and round transitions.
+ */
+@Composable
+fun TabataTimerRunner(
+    workout: Workout,
+    onDismiss: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    if (workout.exercises.isEmpty()) {
+        onDismiss()
+        return
+    }
+
+    var currentRound by remember { mutableIntStateOf(1) }
+    var currentExerciseIndex by remember { mutableIntStateOf(0) }
+    var phase by remember { mutableStateOf(TabataPhase.PREPARE) }
+    var timeLeft by remember { mutableIntStateOf(3) } // 3s prepare countdown
+    var isRunning by remember { mutableStateOf(true) }
+
+    val currentExercise = workout.exercises.getOrNull(currentExerciseIndex) ?: workout.exercises.first()
+    val nextExercise = when {
+        currentExerciseIndex + 1 < workout.exercises.size -> workout.exercises[currentExerciseIndex + 1]
+        currentRound < workout.rounds -> workout.exercises.first()
+        else -> null
+    }
+
+    val totalPhaseDuration = remember(phase, currentExerciseIndex, currentRound) {
+        when (phase) {
+            TabataPhase.PREPARE -> 3
+            TabataPhase.WORK -> currentExercise.workSeconds.coerceAtLeast(1)
+            TabataPhase.REST -> currentExercise.restSeconds.coerceAtLeast(1)
+            TabataPhase.ROUND_REST -> workout.restBetweenRoundsSeconds.coerceAtLeast(1)
+            TabataPhase.COMPLETED -> 1
+        }
+    }
+
+    // Step logic for moving forward
+    fun moveToNext() {
+        when (phase) {
+            TabataPhase.PREPARE -> {
+                phase = TabataPhase.WORK
+                timeLeft = currentExercise.workSeconds
+            }
+            TabataPhase.WORK -> {
+                if (currentExercise.restSeconds > 0) {
+                    phase = TabataPhase.REST
+                    timeLeft = currentExercise.restSeconds
+                } else if (currentExerciseIndex + 1 < workout.exercises.size) {
+                    currentExerciseIndex += 1
+                    phase = TabataPhase.WORK
+                    timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+                } else if (currentRound < workout.rounds) {
+                    if (workout.restBetweenRoundsSeconds > 0) {
+                        phase = TabataPhase.ROUND_REST
+                        timeLeft = workout.restBetweenRoundsSeconds
+                    } else {
+                        currentRound += 1
+                        currentExerciseIndex = 0
+                        phase = TabataPhase.WORK
+                        timeLeft = workout.exercises[0].workSeconds
+                    }
+                } else {
+                    phase = TabataPhase.COMPLETED
+                    isRunning = false
+                }
+            }
+            TabataPhase.REST -> {
+                if (currentExerciseIndex + 1 < workout.exercises.size) {
+                    currentExerciseIndex += 1
+                    phase = TabataPhase.WORK
+                    timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+                } else if (currentRound < workout.rounds) {
+                    if (workout.restBetweenRoundsSeconds > 0) {
+                        phase = TabataPhase.ROUND_REST
+                        timeLeft = workout.restBetweenRoundsSeconds
+                    } else {
+                        currentRound += 1
+                        currentExerciseIndex = 0
+                        phase = TabataPhase.WORK
+                        timeLeft = workout.exercises[0].workSeconds
+                    }
+                } else {
+                    phase = TabataPhase.COMPLETED
+                    isRunning = false
+                }
+            }
+            TabataPhase.ROUND_REST -> {
+                currentRound += 1
+                currentExerciseIndex = 0
+                phase = TabataPhase.WORK
+                timeLeft = workout.exercises[0].workSeconds
+            }
+            TabataPhase.COMPLETED -> {
+                isRunning = false
+            }
+        }
+    }
+
+    fun moveToPrevious() {
+        if (currentExerciseIndex > 0) {
+            currentExerciseIndex -= 1
+            phase = TabataPhase.WORK
+            timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+        } else if (currentRound > 1) {
+            currentRound -= 1
+            currentExerciseIndex = workout.exercises.lastIndex
+            phase = TabataPhase.WORK
+            timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+        } else {
+            phase = TabataPhase.PREPARE
+            timeLeft = 3
+        }
+    }
+
+    fun resetWorkout() {
+        currentRound = 1
+        currentExerciseIndex = 0
+        phase = TabataPhase.PREPARE
+        timeLeft = 3
+        isRunning = true
+    }
+
+    // Timer countdown loop
+    LaunchedEffect(isRunning, phase, timeLeft) {
+        while (isRunning && phase != TabataPhase.COMPLETED) {
+            delay(1000)
+            if (timeLeft > 1) {
+                timeLeft -= 1
+            } else {
+                moveToNext()
+            }
+        }
+    }
+
+    val progressRatio by remember {
+        derivedStateOf {
+            if (totalPhaseDuration > 0) {
+                1f - (timeLeft.toFloat() / totalPhaseDuration.toFloat())
+            } else 0f
+        }
+    }
+
+    val phaseColor by animateColorAsState(
+        targetValue = when (phase) {
+            TabataPhase.PREPARE -> MaterialTheme.colorScheme.tertiary
+            TabataPhase.WORK -> MaterialTheme.colorScheme.primary
+            TabataPhase.REST -> MaterialTheme.colorScheme.secondary
+            TabataPhase.ROUND_REST -> MaterialTheme.colorScheme.tertiaryContainer
+            TabataPhase.COMPLETED -> MaterialTheme.colorScheme.primary
+        },
+        label = "phaseColor"
+    )
+
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false)
+    ) {
+        Surface(
+            modifier = modifier.fillMaxSize(),
+            color = MaterialTheme.colorScheme.background
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.SpaceBetween
+            ) {
+                // Top header: Routine title & Close button
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = workout.title,
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Text(
+                            text = "Round $currentRound of ${workout.rounds} • Exercise ${currentExerciseIndex + 1} of ${workout.exercises.size}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+
+                    IconButton(onClick = onDismiss) {
+                        Icon(imageVector = Icons.Default.Close, contentDescription = "Close Timer")
+                    }
+                }
+
+                // Middle: Phase card & countdown clock
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 16.dp),
+                    shape = RoundedCornerShape(24.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        // Phase badge
+                        Box(
+                            modifier = Modifier
+                                .clip(RoundedCornerShape(16.dp))
+                                .background(phaseColor)
+                                .padding(horizontal = 20.dp, vertical = 8.dp)
+                        ) {
+                            Text(
+                                text = when (phase) {
+                                    TabataPhase.PREPARE -> "GET READY"
+                                    TabataPhase.WORK -> "WORK"
+                                    TabataPhase.REST -> "REST"
+                                    TabataPhase.ROUND_REST -> "ROUND REST"
+                                    TabataPhase.COMPLETED -> "FINISHED!"
+                                },
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold,
+                                color = when (phase) {
+                                    TabataPhase.ROUND_REST -> MaterialTheme.colorScheme.onTertiaryContainer
+                                    else -> Color.White
+                                }
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(20.dp))
+
+                        // Exercise Name
+                        if (phase == TabataPhase.COMPLETED) {
+                            Icon(
+                                imageVector = Icons.Default.CheckCircle,
+                                contentDescription = null,
+                                modifier = Modifier.size(72.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                            Spacer(modifier = Modifier.height(8.dp))
+                            Text(
+                                text = "Workout Complete!",
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.Bold,
+                                textAlign = TextAlign.Center
+                            )
+                        } else {
+                            Text(
+                                text = if (phase == TabataPhase.ROUND_REST) "Catch Your Breath" else currentExercise.name,
+                                style = MaterialTheme.typography.headlineMedium,
+                                fontWeight = FontWeight.ExtraBold,
+                                textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            Spacer(modifier = Modifier.height(16.dp))
+
+                            // Large Seconds Display
+                            Text(
+                                text = "$timeLeft",
+                                fontSize = 84.sp,
+                                fontWeight = FontWeight.Black,
+                                color = phaseColor,
+                                lineHeight = 88.sp
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Phase Progress
+                        LinearProgressIndicator(
+                            progress = { progressRatio.coerceIn(0f, 1f) },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(8.dp)
+                                .clip(RoundedCornerShape(4.dp))
+                        )
+
+                        Spacer(modifier = Modifier.height(16.dp))
+
+                        // Next exercise preview
+                        if (nextExercise != null && phase != TabataPhase.COMPLETED) {
+                            Text(
+                                text = "Up Next: ${nextExercise.name} (${nextExercise.workSeconds}s)",
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                // Bottom Controls
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    IconButton(
+                        onClick = { moveToPrevious() },
+                        enabled = phase != TabataPhase.COMPLETED
+                    ) {
+                        Icon(imageVector = Icons.Default.FastRewind, contentDescription = "Previous Exercise")
+                    }
+
+                    FilledIconButton(
+                        onClick = {
+                            if (phase == TabataPhase.COMPLETED) {
+                                resetWorkout()
+                            } else {
+                                isRunning = !isRunning
+                            }
+                        },
+                        modifier = Modifier.size(72.dp),
+                        shape = CircleShape,
+                        colors = IconButtonDefaults.filledIconButtonColors(containerColor = phaseColor)
+                    ) {
+                        Icon(
+                            imageVector = when {
+                                phase == TabataPhase.COMPLETED -> Icons.Default.Replay
+                                isRunning -> Icons.Default.Pause
+                                else -> Icons.Default.PlayArrow
+                            },
+                            contentDescription = if (isRunning) "Pause" else "Play",
+                            modifier = Modifier.size(36.dp)
+                        )
+                    }
+
+                    IconButton(
+                        onClick = { moveToNext() },
+                        enabled = phase != TabataPhase.COMPLETED
+                    ) {
+                        Icon(imageVector = Icons.Default.FastForward, contentDescription = "Skip Exercise")
+                    }
+
+                    IconButton(onClick = { resetWorkout() }) {
+                        Icon(imageVector = Icons.Default.Replay, contentDescription = "Reset Workout")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true)
+@Composable
+private fun TabataTimerRunnerPreview() {
+    WorkoutTimerTheme {
+        TabataTimerRunner(
+            workout = Workout(
+                title = "Preview Tabata",
+                rounds = 2,
+                restBetweenRoundsSeconds = 30,
+                exercises = listOf(
+                    Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
+                    Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10)
+                )
+            ),
+            onDismiss = {}
+        )
+    }
+}
+

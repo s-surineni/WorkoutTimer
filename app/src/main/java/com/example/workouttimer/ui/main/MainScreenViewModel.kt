@@ -5,8 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.workouttimer.data.DataRepository
 import com.example.workouttimer.data.Workout
 import com.example.workouttimer.ui.main.MainScreenUiState.Success
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -18,18 +20,26 @@ class MainScreenViewModel(private val dataRepository: DataRepository) : ViewMode
       .catch { emit(MainScreenUiState.Error(it)) }
       .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainScreenUiState.Loading)
 
-  fun addWorkout(name: String, workoutSeconds: Int, cooldownSeconds: Int) {
-    dataRepository.addWorkout(
-      Workout(
-        name = name,
-        workoutSeconds = workoutSeconds,
-        cooldownSeconds = cooldownSeconds
-      )
-    )
+  private val _activeWorkout = MutableStateFlow<Workout?>(null)
+  val activeWorkout: StateFlow<Workout?> = _activeWorkout.asStateFlow()
+
+  fun addWorkout(workout: Workout) {
+    dataRepository.addWorkout(workout)
   }
 
   fun removeWorkout(id: String) {
+    if (_activeWorkout.value?.id == id) {
+      _activeWorkout.value = null
+    }
     dataRepository.removeWorkout(id)
+  }
+
+  fun startWorkout(workout: Workout) {
+    _activeWorkout.value = workout
+  }
+
+  fun stopWorkout() {
+    _activeWorkout.value = null
   }
 }
 

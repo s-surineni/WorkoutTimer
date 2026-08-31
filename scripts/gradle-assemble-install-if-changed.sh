@@ -9,9 +9,11 @@ LAST_APK_HASH_FILE=".last_apk_hash"
 APK_PATH="app/build/outputs/apk/debug/app-debug.apk"
 
 # Hash tracked and untracked source files
-src_hash=$(git ls-files -c -o --exclude-standard -z app build.gradle.kts settings.gradle.kts gradle 2>/dev/null \
-  | sort -z \
-  | xargs -0 sha1sum 2>/dev/null \
+src_hash=$(git ls-files -c -o --exclude-standard 2>/dev/null \
+  | while IFS= read -r file; do
+      [ -f "$file" ] && sha1sum "$file"
+    done \
+  | sort \
   | sha1sum \
   | awk '{print $1}')
 

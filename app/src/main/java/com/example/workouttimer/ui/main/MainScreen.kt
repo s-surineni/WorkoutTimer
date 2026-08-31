@@ -26,9 +26,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
@@ -36,29 +33,26 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import androidx.navigation3.runtime.NavKey
 import com.example.workouttimer.data.DefaultDataRepository
+import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
-import com.example.workouttimer.ui.components.AddWorkoutDialog
-import com.example.workouttimer.ui.components.ExerciseTimerCard
+import com.example.workouttimer.ui.components.TabataRoutineCard
+import com.example.workouttimer.ui.components.TabataTimerRunner
 
 @Composable
 fun MainScreen(
-    onItemClick: (NavKey) -> Unit,
+    onAddClick: () -> Unit,
     modifier: Modifier = Modifier,
     viewModel: MainScreenViewModel = viewModel { MainScreenViewModel(DefaultDataRepository()) },
 ) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    var showAddDialog by remember { mutableStateOf(false) }
+    val activeWorkout by viewModel.activeWorkout.collectAsStateWithLifecycle()
 
-    if (showAddDialog) {
-        AddWorkoutDialog(
-            onDismissRequest = { showAddDialog = false },
-            onConfirm = { name, workoutSeconds, cooldownSeconds ->
-                viewModel.addWorkout(name, workoutSeconds, cooldownSeconds)
-                showAddDialog = false
-            }
+    activeWorkout?.let { workout ->
+        TabataTimerRunner(
+            workout = workout,
+            onDismiss = { viewModel.stopWorkout() }
         )
     }
 
@@ -71,7 +65,8 @@ fun MainScreen(
         is MainScreenUiState.Success -> {
             MainScreenContent(
                 workouts = uiState.data,
-                onAddClick = { showAddDialog = true },
+                onAddClick = onAddClick,
+                onStartWorkout = { viewModel.startWorkout(it) },
                 onDeleteWorkout = { viewModel.removeWorkout(it) },
                 modifier = modifier
             )
@@ -93,6 +88,7 @@ fun MainScreen(
 internal fun MainScreenContent(
     workouts: List<Workout>,
     onAddClick: () -> Unit,
+    onStartWorkout: (Workout) -> Unit,
     onDeleteWorkout: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
@@ -100,7 +96,7 @@ internal fun MainScreenContent(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Workout Timer") },
+                title = { Text("Tabata Workout Timer") },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.primaryContainer,
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -113,7 +109,7 @@ internal fun MainScreenContent(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Workout")
+                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Tabata Workout")
             }
         }
     ) { innerPadding ->
@@ -137,13 +133,13 @@ internal fun MainScreenContent(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No workouts yet",
+                        text = "No Tabata routines yet",
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Tap the + button below to add your first workout routine.",
+                        text = "Tap the + button below to create your first multi-exercise Tabata workout.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center
@@ -159,12 +155,11 @@ internal fun MainScreenContent(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 items(workouts, key = { it.id }) { workout ->
-                    ExerciseTimerCard(
-                        exerciseName = workout.name,
-                        workoutSeconds = workout.workoutSeconds,
-                        cooldownSeconds = workout.cooldownSeconds,
-                        modifier = Modifier.fillMaxWidth(),
-                        onDelete = { onDeleteWorkout(workout.id) }
+                    TabataRoutineCard(
+                        workout = workout,
+                        onStart = { onStartWorkout(workout) },
+                        onDelete = { onDeleteWorkout(workout.id) },
+                        modifier = Modifier.fillMaxWidth()
                     )
                 }
             }
@@ -178,10 +173,18 @@ fun MainScreenPreview() {
     WorkoutTimerTheme {
         MainScreenContent(
             workouts = listOf(
-                Workout(name = "Jumping Jacks", workoutSeconds = 30, cooldownSeconds = 10),
-                Workout(name = "Push Ups", workoutSeconds = 45, cooldownSeconds = 15)
+                Workout(
+                    title = "Classic Tabata",
+                    rounds = 2,
+                    restBetweenRoundsSeconds = 30,
+                    exercises = listOf(
+                        Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
+                        Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
+                    )
+                )
             ),
             onAddClick = {},
+            onStartWorkout = {},
             onDeleteWorkout = {}
         )
     }
@@ -194,6 +197,7 @@ fun MainScreenEmptyPreview() {
         MainScreenContent(
             workouts = emptyList(),
             onAddClick = {},
+            onStartWorkout = {},
             onDeleteWorkout = {}
         )
     }

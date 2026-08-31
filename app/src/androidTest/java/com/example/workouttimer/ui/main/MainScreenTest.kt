@@ -4,6 +4,7 @@ import androidx.activity.ComponentActivity
 import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
 import org.junit.Before
 import org.junit.Rule
@@ -20,25 +21,41 @@ class MainScreenTest {
       MainScreenContent(
         workouts = FAKE_DATA,
         onAddClick = {},
+        onStartWorkout = {},
         onDeleteWorkout = {}
       )
     }
   }
 
   @Test
-  fun workoutItems_exist() {
+  fun workoutRoutines_exist() {
     FAKE_DATA.forEach {
-      composeTestRule.onNodeWithText(it.name).assertExists()
+      composeTestRule.onNodeWithText(it.title).assertExists()
     }
   }
 
   @Test
-  fun addWorkoutButton_exists() {
-    composeTestRule.onNodeWithContentDescription("Add Workout").assertExists()
+  fun addTabataButton_exists() {
+    composeTestRule.onNodeWithContentDescription("Add Tabata Workout").assertExists()
   }
 }
 
 private val FAKE_DATA = listOf(
-  Workout(id = "1", name = "Push Ups", workoutSeconds = 30, cooldownSeconds = 10),
-  Workout(id = "2", name = "Squats", workoutSeconds = 45, cooldownSeconds = 15)
+  Workout(
+    id = "1",
+    title = "Push & Core Tabata",
+    rounds = 2,
+    exercises = listOf(
+      Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
+      Exercise(name = "Plank", workSeconds = 20, restSeconds = 10)
+    )
+  ),
+  Workout(
+    id = "2",
+    title = "Leg Burner",
+    rounds = 3,
+    exercises = listOf(
+      Exercise(name = "Squats", workSeconds = 30, restSeconds = 15)
+    )
+  )
 )

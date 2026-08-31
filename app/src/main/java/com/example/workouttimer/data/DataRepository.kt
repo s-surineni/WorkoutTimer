@@ -13,9 +13,38 @@ interface DataRepository {
 
 class DefaultDataRepository(
   initialWorkouts: List<Workout> = listOf(
-    Workout(name = "Jumping Jacks", workoutSeconds = 30, cooldownSeconds = 10),
-    Workout(name = "Push Ups", workoutSeconds = 45, cooldownSeconds = 15),
-    Workout(name = "Plank", workoutSeconds = 60, cooldownSeconds = 20),
+    Workout(
+      title = "Classic Tabata",
+      rounds = 2,
+      restBetweenRoundsSeconds = 30,
+      exercises = listOf(
+        Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
+        Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
+        Exercise(name = "Bodyweight Squats", workSeconds = 20, restSeconds = 10),
+        Exercise(name = "Plank", workSeconds = 20, restSeconds = 10),
+      )
+    ),
+    Workout(
+      title = "Core HIIT Burner",
+      rounds = 2,
+      restBetweenRoundsSeconds = 30,
+      exercises = listOf(
+        Exercise(name = "Bicycle Crunches", workSeconds = 30, restSeconds = 15),
+        Exercise(name = "Mountain Climbers", workSeconds = 30, restSeconds = 15),
+        Exercise(name = "Russian Twists", workSeconds = 30, restSeconds = 15),
+        Exercise(name = "Plank Hold", workSeconds = 30, restSeconds = 15),
+      )
+    ),
+    Workout(
+      title = "Cardio Blast",
+      rounds = 3,
+      restBetweenRoundsSeconds = 40,
+      exercises = listOf(
+        Exercise(name = "Burpees", workSeconds = 20, restSeconds = 10),
+        Exercise(name = "High Knees", workSeconds = 20, restSeconds = 10),
+        Exercise(name = "Jump Squats", workSeconds = 20, restSeconds = 10),
+      )
+    ),
   )
 ) : DataRepository {
   private val _workouts = MutableStateFlow(initialWorkouts)

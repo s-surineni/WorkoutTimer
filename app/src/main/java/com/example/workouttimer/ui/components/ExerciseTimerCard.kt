@@ -21,6 +21,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
@@ -70,7 +71,7 @@ fun ExerciseTimerCard(
     }
 
     val totalForPhase = if (isWorkoutPhase) workoutSeconds.coerceAtLeast(1) else cooldownSeconds.coerceAtLeast(1)
-    val progress = 1f - (timeLeft.toFloat() / totalForPhase.toFloat())
+    val progress by remember { derivedStateOf { 1f - (timeLeft.toFloat() / totalForPhase.toFloat()) } }
 
     Card(
         modifier = modifier,
