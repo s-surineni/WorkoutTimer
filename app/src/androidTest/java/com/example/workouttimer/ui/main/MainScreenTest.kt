@@ -49,12 +49,25 @@ class MainScreenTest {
   }
 
   @Test
-  fun historyTab_displaysTrainingStatsAndLoggedSessions() {
+  fun deleteRoutine_showsConfirmationDialog() {
+    composeTestRule.onAllNodesWithContentDescription("Delete Routine")[0].performClick()
+    composeTestRule.onNodeWithText("Delete Workout Routine?").assertExists()
+    composeTestRule.onNodeWithText("Are you sure you want to delete \"Push & Core Tabata\"? This action cannot be undone.").assertExists()
+    composeTestRule.onNodeWithText("Cancel").assertExists()
+    composeTestRule.onNodeWithText("Delete").assertExists()
+  }
+
+  @Test
+  fun historyTab_displaysTrainingStatsAndClearConfirmation() {
     composeTestRule.onNodeWithText("History & Stats (1)").performClick()
     composeTestRule.onNodeWithText("Training Statistics").assertExists()
     composeTestRule.onNodeWithText("Time Trained").assertExists()
     composeTestRule.onNodeWithText("Completed").assertExists()
     composeTestRule.onNodeWithText("Push & Core Tabata").assertExists()
+
+    composeTestRule.onNodeWithContentDescription("Clear History").performClick()
+    composeTestRule.onNodeWithText("Clear Workout History?").assertExists()
+    composeTestRule.onNodeWithText("Clear All").assertExists()
   }
 }
 

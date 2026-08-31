@@ -38,7 +38,6 @@ abstract class AppDatabase : RoomDatabase() {
                     "workout_timer.db"
                 )
                 .fallbackToDestructiveMigration()
-                .addCallback(DatabaseCallback())
                 .addCallback(object : Callback() {
                     override fun onCreate(db: SupportSQLiteDatabase) {
                         super.onCreate(db)
@@ -52,18 +51,6 @@ abstract class AppDatabase : RoomDatabase() {
                 dbInstance = instance
                 INSTANCE = instance
                 instance
-            }
-        }
-    }
-
-    private class DatabaseCallback : Callback() {
-        override fun onCreate(db: SupportSQLiteDatabase) {
-            super.onCreate(db)
-            INSTANCE?.let { database ->
-                CoroutineScope(Dispatchers.IO).launch {
-                    val defaultWorkouts = defaultTabataPresets.map { it.toEntity() }
-                    database.workoutDao().insertAll(defaultWorkouts)
-                }
             }
         }
     }
