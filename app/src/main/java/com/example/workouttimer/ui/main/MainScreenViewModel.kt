@@ -4,19 +4,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.workouttimer.data.DataRepository
 import com.example.workouttimer.data.Workout
-import com.example.workouttimer.ui.main.MainScreenUiState.Success
+import com.example.workouttimer.data.WorkoutHistoryRecord
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
 class MainScreenViewModel(private val dataRepository: DataRepository) : ViewModel() {
   val uiState: StateFlow<MainScreenUiState> =
-    dataRepository.workouts
-      .map<List<Workout>, MainScreenUiState>(::Success)
+    combine(dataRepository.workouts, dataRepository.history) { workouts, history ->
+      MainScreenUiState.Success(workouts = workouts, history = history) as MainScreenUiState
+    }
       .catch { emit(MainScreenUiState.Error(it)) }
       .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), MainScreenUiState.Loading)
 
@@ -43,8 +44,8 @@ class MainScreenViewModel(private val dataRepository: DataRepository) : ViewMode
 
   fun getWorkoutById(id: String): Workout? {
     val current = uiState.value
-    return if (current is Success) {
-      current.data.find { it.id == id }
+    return if (current is MainScreenUiState.Success) {
+      current.workouts.find { it.id == id }
     } else null
   }
 
@@ -55,12 +56,32 @@ class MainScreenViewModel(private val dataRepository: DataRepository) : ViewMode
   fun stopWorkout() {
     _activeWorkout.value = null
   }
+
+  fun logWorkoutCompletion(workout: Workout, durationSeconds: Int) {
+    val record = WorkoutHistoryRecord(
+      workoutId = workout.id,
+      workoutTitle = workout.title,
+      totalDurationSeconds = durationSeconds,
+      roundsCompleted = workout.rounds,
+      totalExercises = workout.exercises.size
+    )
+    dataRepository.logWorkoutCompletion(record)
+  }
+
+  fun clearHistory() {
+    dataRepository.clearHistory()
+  }
 }
 
 sealed interface MainScreenUiState {
-  object Loading : MainScreenUiState
+  data object Loading : MainScreenUiState
 
   data class Error(val throwable: Throwable) : MainScreenUiState
 
-  data class Success(val data: List<Workout>) : MainScreenUiState
+  data class Success(
+    val workouts: List<Workout>,
+    val history: List<WorkoutHistoryRecord> = emptyList()
+  ) : MainScreenUiState {
+    val data: List<Workout> get() = workouts
+  }
 }

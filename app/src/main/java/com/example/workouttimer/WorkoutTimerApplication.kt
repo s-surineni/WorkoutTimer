@@ -7,5 +7,10 @@ import com.example.workouttimer.data.local.AppDatabase
 
 class WorkoutTimerApplication : Application() {
     val database: AppDatabase by lazy { AppDatabase.getInstance(this) }
-    val repository: DataRepository by lazy { RoomDataRepository(database.workoutDao()) }
+    val repository: DataRepository by lazy {
+        RoomDataRepository(
+            workoutDao = database.workoutDao(),
+            workoutHistoryDao = database.workoutHistoryDao()
+        )
+    }
 }

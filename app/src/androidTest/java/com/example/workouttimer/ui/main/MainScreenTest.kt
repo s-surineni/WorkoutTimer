@@ -4,8 +4,10 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
+import com.example.workouttimer.data.WorkoutHistoryRecord
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -20,6 +22,7 @@ class MainScreenTest {
     composeTestRule.setContent {
       MainScreenContent(
         workouts = FAKE_DATA,
+        history = FAKE_HISTORY,
         onAddClick = {},
         onEditClick = {},
         onStartWorkout = {},
@@ -44,6 +47,15 @@ class MainScreenTest {
   fun editRoutineButtons_exist() {
     composeTestRule.onAllNodesWithContentDescription("Edit Routine")[0].assertExists()
   }
+
+  @Test
+  fun historyTab_displaysTrainingStatsAndLoggedSessions() {
+    composeTestRule.onNodeWithText("History & Stats (1)").performClick()
+    composeTestRule.onNodeWithText("Training Statistics").assertExists()
+    composeTestRule.onNodeWithText("Time Trained").assertExists()
+    composeTestRule.onNodeWithText("Completed").assertExists()
+    composeTestRule.onNodeWithText("Push & Core Tabata").assertExists()
+  }
 }
 
 private val FAKE_DATA = listOf(
@@ -63,5 +75,17 @@ private val FAKE_DATA = listOf(
     exercises = listOf(
       Exercise(name = "Squats", workSeconds = 30, restSeconds = 15)
     )
+  )
+)
+
+private val FAKE_HISTORY = listOf(
+  WorkoutHistoryRecord(
+    id = "h1",
+    workoutId = "1",
+    workoutTitle = "Push & Core Tabata",
+    timestampMillis = System.currentTimeMillis(),
+    totalDurationSeconds = 180,
+    roundsCompleted = 2,
+    totalExercises = 2
   )
 )

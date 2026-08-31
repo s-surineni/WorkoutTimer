@@ -3,6 +3,7 @@ package com.example.workouttimer.ui.main
 import com.example.workouttimer.data.DataRepository
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
+import com.example.workouttimer.data.WorkoutHistoryRecord
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertNull
@@ -56,14 +57,24 @@ class MainScreenViewModelTest {
   }
 
   @Test
-  fun uiState_loadsWorkoutsSuccessfully() = runTest {
+  fun uiState_loadsWorkoutsAndHistorySuccessfully() = runTest {
     val sampleWorkout = Workout(
       id = "1",
       title = "HIIT 1",
       rounds = 2,
       exercises = listOf(Exercise(name = "Squats", workSeconds = 20, restSeconds = 10))
     )
-    val repository = FakeWorkoutRepository(initial = listOf(sampleWorkout))
+    val sampleHistory = WorkoutHistoryRecord(
+      workoutId = "1",
+      workoutTitle = "HIIT 1",
+      totalDurationSeconds = 120,
+      roundsCompleted = 2,
+      totalExercises = 1
+    )
+    val repository = FakeWorkoutRepository(
+      initial = listOf(sampleWorkout),
+      initialHistory = listOf(sampleHistory)
+    )
     val viewModel = MainScreenViewModel(repository)
 
     backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) {
@@ -73,9 +84,11 @@ class MainScreenViewModelTest {
 
     val state = viewModel.uiState.value
     assertTrue(state is MainScreenUiState.Success)
-    assertEquals(1, (state as MainScreenUiState.Success).data.size)
-    assertEquals("HIIT 1", state.data.first().title)
-    assertEquals(1, state.data.first().exercises.size)
+    val success = state as MainScreenUiState.Success
+    assertEquals(1, success.workouts.size)
+    assertEquals("HIIT 1", success.workouts.first().title)
+    assertEquals(1, success.history.size)
+    assertEquals("HIIT 1", success.history.first().workoutTitle)
   }
 
   @Test
@@ -198,28 +211,82 @@ class MainScreenViewModelTest {
     viewModel.stopWorkout()
     assertNull(viewModel.activeWorkout.value)
   }
+
+  @Test
+  fun logWorkoutCompletion_addsRecordToHistory() = runTest {
+    val repository = FakeWorkoutRepository()
+    val viewModel = MainScreenViewModel(repository)
+
+    val workout = Workout(
+      id = "w100",
+      title = "Cardio Burn",
+      rounds = 2,
+      exercises = listOf(Exercise(name = "Jumps", workSeconds = 20, restSeconds = 10))
+    )
+
+    viewModel.logWorkoutCompletion(workout, 60)
+
+    val history = repository.history.first()
+    assertEquals(1, history.size)
+    assertEquals("Cardio Burn", history.first().workoutTitle)
+    assertEquals(60, history.first().totalDurationSeconds)
+    assertEquals(2, history.first().roundsCompleted)
+  }
+
+  @Test
+  fun clearHistory_removesAllHistoryRecords() = runTest {
+    val initialHistory = listOf(
+      WorkoutHistoryRecord(
+        workoutId = "w1",
+        workoutTitle = "Tabata",
+        totalDurationSeconds = 120,
+        roundsCompleted = 2,
+        totalExercises = 2
+      )
+    )
+    val repository = FakeWorkoutRepository(initialHistory = initialHistory)
+    val viewModel = MainScreenViewModel(repository)
+
+    assertEquals(1, repository.history.first().size)
+    viewModel.clearHistory()
+    assertTrue(repository.history.first().isEmpty())
+  }
 }
 
 private class LoadingWorkoutRepository : DataRepository {
   private val _workouts = MutableSharedFlow<List<Workout>>()
   override val workouts: Flow<List<Workout>> = _workouts.asSharedFlow()
 
+  private val _history = MutableSharedFlow<List<WorkoutHistoryRecord>>()
+  override val history: Flow<List<WorkoutHistoryRecord>> = _history.asSharedFlow()
+
   override fun addWorkout(workout: Workout) {}
   override fun updateWorkout(workout: Workout) {}
   override fun removeWorkout(id: String) {}
+  override fun logWorkoutCompletion(record: WorkoutHistoryRecord) {}
+  override fun clearHistory() {}
 }
 
 private class ErrorWorkoutRepository(val exception: Throwable) : DataRepository {
   override val workouts: Flow<List<Workout>> = flow { throw exception }
+  override val history: Flow<List<WorkoutHistoryRecord>> = flow { throw exception }
 
   override fun addWorkout(workout: Workout) {}
   override fun updateWorkout(workout: Workout) {}
   override fun removeWorkout(id: String) {}
+  override fun logWorkoutCompletion(record: WorkoutHistoryRecord) {}
+  override fun clearHistory() {}
 }
 
-private class FakeWorkoutRepository(initial: List<Workout> = emptyList()) : DataRepository {
+private class FakeWorkoutRepository(
+  initial: List<Workout> = emptyList(),
+  initialHistory: List<WorkoutHistoryRecord> = emptyList()
+) : DataRepository {
   private val _workouts = MutableStateFlow(initial)
   override val workouts: Flow<List<Workout>> = _workouts.asStateFlow()
+
+  private val _history = MutableStateFlow(initialHistory)
+  override val history: Flow<List<WorkoutHistoryRecord>> = _history.asStateFlow()
 
   override fun addWorkout(workout: Workout) {
     _workouts.update { it + workout }
@@ -231,5 +298,13 @@ private class FakeWorkoutRepository(initial: List<Workout> = emptyList()) : Data
 
   override fun removeWorkout(id: String) {
     _workouts.update { current -> current.filterNot { it.id == id } }
+  }
+
+  override fun logWorkoutCompletion(record: WorkoutHistoryRecord) {
+    _history.update { listOf(record) + it }
+  }
+
+  override fun clearHistory() {
+    _history.value = emptyList()
   }
 }

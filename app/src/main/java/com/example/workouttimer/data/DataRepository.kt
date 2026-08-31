@@ -6,24 +6,35 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 
 /**
- * Interface defining the reactive data source for Workout routines.
+ * Interface defining the reactive data source for Workout routines and workout completion history.
  */
 interface DataRepository {
   val workouts: Flow<List<Workout>>
+  val history: Flow<List<WorkoutHistoryRecord>>
 
   fun addWorkout(workout: Workout)
 
   fun updateWorkout(workout: Workout)
 
   fun removeWorkout(id: String)
+
+  fun logWorkoutCompletion(record: WorkoutHistoryRecord)
+
+  fun clearHistory()
 }
 
 /**
  * Default in-memory implementation of [DataRepository], pre-populated with default Tabata routines.
  */
-class DefaultDataRepository(initialWorkouts: List<Workout> = defaultTabataWorkouts) : DataRepository {
+class DefaultDataRepository(
+  initialWorkouts: List<Workout> = defaultTabataWorkouts,
+  initialHistory: List<WorkoutHistoryRecord> = emptyList()
+) : DataRepository {
   private val _workouts = MutableStateFlow(initialWorkouts)
   override val workouts: Flow<List<Workout>> = _workouts.asStateFlow()
+
+  private val _history = MutableStateFlow(initialHistory)
+  override val history: Flow<List<WorkoutHistoryRecord>> = _history.asStateFlow()
 
   override fun addWorkout(workout: Workout) {
     _workouts.update { current -> current + workout }
@@ -37,6 +48,14 @@ class DefaultDataRepository(initialWorkouts: List<Workout> = defaultTabataWorkou
 
   override fun removeWorkout(id: String) {
     _workouts.update { current -> current.filterNot { it.id == id } }
+  }
+
+  override fun logWorkoutCompletion(record: WorkoutHistoryRecord) {
+    _history.update { current -> listOf(record) + current }
+  }
+
+  override fun clearHistory() {
+    _history.value = emptyList()
   }
 }
 

@@ -15,10 +15,15 @@ import kotlinx.coroutines.launch
 /**
  * Main Room database for the Workout Timer application.
  */
-@Database(entities = [WorkoutEntity::class], version = 1, exportSchema = false)
+@Database(
+    entities = [WorkoutEntity::class, WorkoutHistoryEntity::class],
+    version = 2,
+    exportSchema = false
+)
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkoutDao
+    abstract fun workoutHistoryDao(): WorkoutHistoryDao
 
     companion object {
         @Volatile
@@ -31,6 +36,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "workout_timer.db"
                 )
+                .fallbackToDestructiveMigration()
                 .addCallback(DatabaseCallback())
                 .build()
                 INSTANCE = instance
