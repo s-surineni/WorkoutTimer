@@ -31,6 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
 
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
+                var dbInstance: AppDatabase? = null
                 val instance = Room.databaseBuilder(
                     context.applicationContext,
                     AppDatabase::class.java,
@@ -38,7 +39,17 @@ abstract class AppDatabase : RoomDatabase() {
                 )
                 .fallbackToDestructiveMigration()
                 .addCallback(DatabaseCallback())
+                .addCallback(object : Callback() {
+                    override fun onCreate(db: SupportSQLiteDatabase) {
+                        super.onCreate(db)
+                        CoroutineScope(Dispatchers.IO).launch {
+                            val defaultWorkouts = defaultTabataPresets.map { it.toEntity() }
+                            (dbInstance ?: INSTANCE)?.workoutDao()?.insertAll(defaultWorkouts)
+                        }
+                    }
+                })
                 .build()
+                dbInstance = instance
                 INSTANCE = instance
                 instance
             }
