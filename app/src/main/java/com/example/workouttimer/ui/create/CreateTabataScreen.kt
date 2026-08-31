@@ -24,6 +24,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDownward
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Remove
@@ -451,12 +453,44 @@ fun CreateTabataScreen(
                                     }
                                 }
 
-                                IconButton(onClick = { exercises.removeAt(index) }) {
-                                    Icon(
-                                        imageVector = Icons.Default.Close,
-                                        contentDescription = "Remove exercise",
-                                        tint = MaterialTheme.colorScheme.error
-                                    )
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(
+                                        onClick = {
+                                            if (index > 0) {
+                                                val item = exercises.removeAt(index)
+                                                exercises.add(index - 1, item)
+                                            }
+                                        },
+                                        enabled = index > 0
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowUpward,
+                                            contentDescription = "Move exercise up"
+                                        )
+                                    }
+
+                                    IconButton(
+                                        onClick = {
+                                            if (index < exercises.lastIndex) {
+                                                val item = exercises.removeAt(index)
+                                                exercises.add(index + 1, item)
+                                            }
+                                        },
+                                        enabled = index < exercises.lastIndex
+                                    ) {
+                                        Icon(
+                                            imageVector = Icons.Default.ArrowDownward,
+                                            contentDescription = "Move exercise down"
+                                        )
+                                    }
+
+                                    IconButton(onClick = { exercises.removeAt(index) }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Close,
+                                            contentDescription = "Remove exercise",
+                                            tint = MaterialTheme.colorScheme.error
+                                        )
+                                    }
                                 }
                             }
                         }
