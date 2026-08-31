@@ -1,6 +1,7 @@
 package com.example.workouttimer.ui.components
 
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -71,8 +72,8 @@ enum class TabataPhase {
 }
 
 /**
- * Full interactive Tabata Workout Timer Runner that steps through all exercises,
- * work/rest intervals, audio sound cues, and round transitions.
+ * Full interactive Tabata Workout Timer Runner with distinct, high-contrast colors
+ * for Work and Rest intervals, audio feedback cues, and round transitions.
  */
 @Composable
 fun TabataTimerRunner(
@@ -248,15 +249,41 @@ fun TabataTimerRunner(
         }
     }
 
+    // Bold, distinct, high-contrast color scheme for each phase
     val phaseColor by animateColorAsState(
         targetValue = when (phase) {
-            TabataPhase.PREPARE -> MaterialTheme.colorScheme.tertiary
-            TabataPhase.WORK -> MaterialTheme.colorScheme.primary
-            TabataPhase.REST -> MaterialTheme.colorScheme.secondary
-            TabataPhase.ROUND_REST -> MaterialTheme.colorScheme.tertiaryContainer
-            TabataPhase.COMPLETED -> MaterialTheme.colorScheme.primary
+            TabataPhase.PREPARE -> Color(0xFFE65100) // Energetic Orange
+            TabataPhase.WORK -> Color(0xFF2E7D32) // Bold Emerald Green
+            TabataPhase.REST -> Color(0xFF1565C0) // Cool Ocean Blue
+            TabataPhase.ROUND_REST -> Color(0xFF6A1B9A) // Deep Royal Purple
+            TabataPhase.COMPLETED -> Color(0xFF2E7D32) // Victory Green
         },
+        animationSpec = tween(durationMillis = 350),
         label = "phaseColor"
+    )
+
+    val cardContainerColor by animateColorAsState(
+        targetValue = when (phase) {
+            TabataPhase.PREPARE -> Color(0xFFFFF3E0) // Light Warm Orange Container
+            TabataPhase.WORK -> Color(0xFFE8F5E9) // Light Crisp Green Container
+            TabataPhase.REST -> Color(0xFFE3F2FD) // Light Refreshing Blue Container
+            TabataPhase.ROUND_REST -> Color(0xFFF3E5F5) // Light Lavender Container
+            TabataPhase.COMPLETED -> Color(0xFFE8F5E9) // Light Green Container
+        },
+        animationSpec = tween(durationMillis = 350),
+        label = "cardContainerColor"
+    )
+
+    val onCardColor by animateColorAsState(
+        targetValue = when (phase) {
+            TabataPhase.PREPARE -> Color(0xFF4E1D00)
+            TabataPhase.WORK -> Color(0xFF0F3D17)
+            TabataPhase.REST -> Color(0xFF0D3360)
+            TabataPhase.ROUND_REST -> Color(0xFF380E54)
+            TabataPhase.COMPLETED -> Color(0xFF0F3D17)
+        },
+        animationSpec = tween(durationMillis = 350),
+        label = "onCardColor"
     )
 
     Dialog(
@@ -306,13 +333,13 @@ fun TabataTimerRunner(
                     }
                 }
 
-                // Middle: Phase card & countdown clock
+                // Middle: Phase card & countdown clock with distinct Work/Rest color theme
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(vertical = 16.dp),
-                    shape = RoundedCornerShape(24.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant)
+                    shape = RoundedCornerShape(28.dp),
+                    colors = CardDefaults.cardColors(containerColor = cardContainerColor)
                 ) {
                     Column(
                         modifier = Modifier
@@ -325,7 +352,7 @@ fun TabataTimerRunner(
                             modifier = Modifier
                                 .clip(RoundedCornerShape(16.dp))
                                 .background(phaseColor)
-                                .padding(horizontal = 20.dp, vertical = 8.dp)
+                                .padding(horizontal = 24.dp, vertical = 10.dp)
                         ) {
                             Text(
                                 text = when (phase) {
@@ -336,11 +363,8 @@ fun TabataTimerRunner(
                                     TabataPhase.COMPLETED -> "FINISHED!"
                                 },
                                 style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold,
-                                color = when (phase) {
-                                    TabataPhase.ROUND_REST -> MaterialTheme.colorScheme.onTertiaryContainer
-                                    else -> Color.White
-                                }
+                                fontWeight = FontWeight.ExtraBold,
+                                color = Color.White
                             )
                         }
 
@@ -352,13 +376,14 @@ fun TabataTimerRunner(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
                                 modifier = Modifier.size(72.dp),
-                                tint = MaterialTheme.colorScheme.primary
+                                tint = phaseColor
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
                                 text = "Workout Complete!",
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
+                                color = onCardColor,
                                 textAlign = TextAlign.Center
                             )
                         } else {
@@ -366,6 +391,7 @@ fun TabataTimerRunner(
                                 text = if (phase == TabataPhase.ROUND_REST) "Catch Your Breath" else currentExercise.name,
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.ExtraBold,
+                                color = onCardColor,
                                 textAlign = TextAlign.Center,
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -375,10 +401,10 @@ fun TabataTimerRunner(
                             // Large Seconds Display
                             Text(
                                 text = "$timeLeft",
-                                fontSize = 84.sp,
+                                fontSize = 88.sp,
                                 fontWeight = FontWeight.Black,
                                 color = phaseColor,
-                                lineHeight = 88.sp
+                                lineHeight = 92.sp
                             )
                         }
 
@@ -387,10 +413,12 @@ fun TabataTimerRunner(
                         // Phase Progress
                         LinearProgressIndicator(
                             progress = { progressRatio.coerceIn(0f, 1f) },
+                            color = phaseColor,
+                            trackColor = phaseColor.copy(alpha = 0.2f),
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(8.dp)
-                                .clip(RoundedCornerShape(4.dp))
+                                .height(10.dp)
+                                .clip(RoundedCornerShape(5.dp))
                         )
 
                         Spacer(modifier = Modifier.height(16.dp))
@@ -400,7 +428,7 @@ fun TabataTimerRunner(
                             Text(
                                 text = "Up Next: ${nextExercise.name} (${nextExercise.workSeconds}s)",
                                 style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                color = onCardColor.copy(alpha = 0.8f)
                             )
                         }
                     }
@@ -438,7 +466,8 @@ fun TabataTimerRunner(
                                 else -> Icons.Default.PlayArrow
                             },
                             contentDescription = if (isRunning) "Pause" else "Play",
-                            modifier = Modifier.size(36.dp)
+                            modifier = Modifier.size(36.dp),
+                            tint = Color.White
                         )
                     }
 
