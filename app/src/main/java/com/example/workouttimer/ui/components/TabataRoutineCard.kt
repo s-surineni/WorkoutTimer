@@ -58,7 +58,6 @@ fun TabataRoutineCard(
     onStart: () -> Unit,
     onEdit: () -> Unit,
     onDelete: () -> Unit,
-    modifier: Modifier = Modifier
     modifier: Modifier = Modifier,
     onShare: () -> Unit = {}
 ) {
@@ -70,7 +69,6 @@ fun TabataRoutineCard(
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f))
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            // Header: Title & Action buttons (Edit & Delete)
             // Header: Title & Action buttons (Share, Edit & Delete)
             Row(
                 modifier = Modifier.fillMaxWidth(),
