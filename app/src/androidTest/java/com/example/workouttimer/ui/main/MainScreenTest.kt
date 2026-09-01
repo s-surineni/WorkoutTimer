@@ -49,6 +49,19 @@ class MainScreenTest {
   }
 
   @Test
+  fun shareRoutineButtons_exist() {
+    composeTestRule.onAllNodesWithContentDescription("Share Routine")[0].assertExists()
+  }
+
+  @Test
+  fun importRoutineButton_opensImportDialog() {
+    composeTestRule.onNodeWithContentDescription("Import Routine").performClick()
+    composeTestRule.onNodeWithText("Import Workout Routines").assertExists()
+    composeTestRule.onNodeWithText("Select JSON File").assertExists()
+    composeTestRule.onNodeWithText("Cancel").assertExists()
+  }
+
+  @Test
   fun deleteRoutine_showsConfirmationDialog() {
     composeTestRule.onAllNodesWithContentDescription("Delete Routine")[0].performClick()
     composeTestRule.onNodeWithText("Delete Workout Routine?").assertExists()

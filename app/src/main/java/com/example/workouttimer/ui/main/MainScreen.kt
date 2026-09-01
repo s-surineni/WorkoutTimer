@@ -1,5 +1,6 @@
 package com.example.workouttimer.ui.main
 
+import android.content.Intent
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +20,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.EmojiEvents
+import androidx.compose.material.icons.filled.FileDownload
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Timer
@@ -50,6 +52,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -60,7 +63,9 @@ import com.example.workouttimer.data.DefaultDataRepository
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
 import com.example.workouttimer.data.WorkoutHistoryRecord
+import com.example.workouttimer.data.WorkoutJsonCodec
 import com.example.workouttimer.theme.WorkoutTimerTheme
+import com.example.workouttimer.ui.components.ImportWorkoutDialog
 import com.example.workouttimer.ui.components.TabataRoutineCard
 import com.example.workouttimer.ui.components.TabataTimerRunner
 import java.text.SimpleDateFormat
@@ -74,6 +79,7 @@ fun MainScreen(
     modifier: Modifier = Modifier,
     viewModel: MainScreenViewModel = viewModel { MainScreenViewModel(DefaultDataRepository()) },
 ) {
+    val context = LocalContext.current
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val activeWorkout by viewModel.activeWorkout.collectAsStateWithLifecycle()
 
@@ -102,6 +108,21 @@ fun MainScreen(
                 onStartWorkout = { viewModel.startWorkout(it) },
                 onDeleteWorkout = { viewModel.removeWorkout(it) },
                 onClearHistory = { viewModel.clearHistory() },
+                onShareWorkout = { workout ->
+                    val json = WorkoutJsonCodec.encodeWorkout(workout)
+                    val shareIntent = Intent(Intent.ACTION_SEND).apply {
+                        type = "text/plain"
+                        putExtra(Intent.EXTRA_SUBJECT, "Tabata Workout Routine: ${workout.title}")
+                        putExtra(
+                            Intent.EXTRA_TEXT,
+                            "Tabata Routine: ${workout.title}\n${workout.rounds} Rounds • ${workout.exercises.size} Exercises\n\nJSON:\n$json"
+                        )
+                    }
+                    context.startActivity(Intent.createChooser(shareIntent, "Share Workout Routine"))
+                },
+                onImportWorkouts = { importedList ->
+                    importedList.forEach { viewModel.addWorkout(it) }
+                },
                 modifier = modifier
             )
         }
@@ -127,11 +148,24 @@ internal fun MainScreenContent(
     onStartWorkout: (Workout) -> Unit,
     onDeleteWorkout: (String) -> Unit,
     onClearHistory: () -> Unit = {},
+    onShareWorkout: (Workout) -> Unit = {},
+    onImportWorkouts: (List<Workout>) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
     var selectedTabIndex by rememberSaveable { mutableIntStateOf(0) }
     var workoutToDelete by remember { mutableStateOf<Workout?>(null) }
     var showClearHistoryDialog by remember { mutableStateOf(false) }
+    var showImportDialog by remember { mutableStateOf(false) }
+
+    // Dialog for importing workouts from JSON
+    if (showImportDialog) {
+        ImportWorkoutDialog(
+            onDismiss = { showImportDialog = false },
+            onWorkoutsImported = { importedList ->
+                onImportWorkouts(importedList)
+            }
+        )
+    }
 
     // Confirmation dialog for deleting a workout routine
     workoutToDelete?.let { workout ->
@@ -231,6 +265,15 @@ internal fun MainScreenContent(
             TopAppBar(
                 title = { Text("Tabata Workout Timer") },
                 actions = {
+                    if (selectedTabIndex == 0) {
+                        IconButton(onClick = { showImportDialog = true }) {
+                            Icon(
+                                imageVector = Icons.Default.FileDownload,
+                                contentDescription = "Import Routine",
+                                tint = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
                     if (selectedTabIndex == 1 && history.isNotEmpty()) {
                         IconButton(onClick = { showClearHistoryDialog = true }) {
                             Icon(
@@ -287,7 +330,8 @@ internal fun MainScreenContent(
                     workouts = workouts,
                     onEditClick = onEditClick,
                     onStartWorkout = onStartWorkout,
-                    onDeleteClick = { workout -> workoutToDelete = workout }
+                    onDeleteClick = { workout -> workoutToDelete = workout },
+                    onShareClick = onShareWorkout
                 )
             } else {
                 HistoryTabContent(history = history)
@@ -301,7 +345,8 @@ private fun RoutinesTabContent(
     workouts: List<Workout>,
     onEditClick: (Workout) -> Unit,
     onStartWorkout: (Workout) -> Unit,
-    onDeleteClick: (Workout) -> Unit
+    onDeleteClick: (Workout) -> Unit,
+    onShareClick: (Workout) -> Unit
 ) {
     if (workouts.isEmpty()) {
         Box(
@@ -347,6 +392,7 @@ private fun RoutinesTabContent(
                     onStart = { onStartWorkout(workout) },
                     onEdit = { onEditClick(workout) },
                     onDelete = { onDeleteClick(workout) },
+                    onShare = { onShareClick(workout) },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

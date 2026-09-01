@@ -2,12 +2,14 @@ package com.example.workouttimer.data
 
 import androidx.compose.runtime.Immutable
 import java.util.UUID
+import kotlinx.serialization.Serializable
 
 /**
  * Represents a full Tabata / HIIT workout routine consisting of multiple exercises,
  * configured rounds, and rest intervals.
  */
 @Immutable
+@Serializable
 data class Workout(
     val id: String = UUID.randomUUID().toString(),
     val title: String,
