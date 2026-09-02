@@ -6,6 +6,8 @@ import kotlinx.serialization.json.Json
 
 /**
  * Utility for robust encoding and decoding of [Workout] routines to/from JSON.
+ * Includes smart JSON payload extraction to effortlessly handle copied chat messages,
+ * markdown code blocks, and formatted share text.
  */
 object WorkoutJsonCodec {
     val jsonFormat = Json {
@@ -30,30 +32,68 @@ object WorkoutJsonCodec {
     }
 
     /**
-     * Deserializes a JSON string into a [Workout] domain object.
+     * Extracts a raw JSON substring from mixed text if the input contains surrounding
+     * chat prose, headers, or markdown code fences (e.g. ```json ... ```).
+     */
+    fun extractJsonPayload(input: String): String {
+        val trimmed = input.trim()
+        if ((trimmed.startsWith("{") && trimmed.endsWith("}")) ||
+            (trimmed.startsWith("[") && trimmed.endsWith("]"))) {
+            return trimmed
+        }
+
+        // Check for markdown code fences ```json ... ``` or ``` ... ```
+        val codeBlockRegex = Regex("```(?:json)?\\s*([\\s\\S]*?)\\s*```", RegexOption.IGNORE_CASE)
+        val match = codeBlockRegex.find(trimmed)
+        if (match != null) {
+            val content = match.groupValues[1].trim()
+            if (content.isNotEmpty()) return content
+        }
+
+        val firstBrace = trimmed.indexOf('{')
+        val lastBrace = trimmed.lastIndexOf('}')
+        val firstBracket = trimmed.indexOf('[')
+        val lastBracket = trimmed.lastIndexOf(']')
+
+        // Determine whether an array or an object starts first in the text
+        if (firstBracket != -1 && (firstBrace == -1 || firstBracket < firstBrace)) {
+            if (lastBracket != -1 && lastBracket > firstBracket) {
+                return trimmed.substring(firstBracket, lastBracket + 1).trim()
+            }
+        } else if (firstBrace != -1) {
+            if (lastBrace != -1 && lastBrace > firstBrace) {
+                return trimmed.substring(firstBrace, lastBrace + 1).trim()
+            }
+        }
+
+        return trimmed
+    }
+
+    /**
+     * Deserializes a JSON string (or mixed text containing JSON) into a [Workout] domain object.
      * Validates contents and assigns a new UUID if [generateNewId] is true.
      */
     fun decodeWorkout(jsonString: String, generateNewId: Boolean = true): Result<Workout> {
         return runCatching {
-            val raw = jsonString.trim()
-            val parsed = jsonFormat.decodeFromString<Workout>(raw)
+            val payload = extractJsonPayload(jsonString)
+            val parsed = jsonFormat.decodeFromString<Workout>(payload)
             validateAndSanitizeWorkout(parsed, generateNewId)
         }
     }
 
     /**
-     * Deserializes a JSON string into a list of [Workout]s, supporting both single objects
-     * and array payloads.
+     * Deserializes a JSON string (or mixed text containing JSON) into a list of [Workout]s,
+     * supporting both single objects and array payloads.
      */
     fun decodeWorkouts(jsonString: String, generateNewIds: Boolean = true): Result<List<Workout>> {
         return runCatching {
-            val raw = jsonString.trim()
-            if (raw.startsWith("[")) {
-                val list = jsonFormat.decodeFromString<List<Workout>>(raw)
+            val payload = extractJsonPayload(jsonString)
+            if (payload.startsWith("[")) {
+                val list = jsonFormat.decodeFromString<List<Workout>>(payload)
                 require(list.isNotEmpty()) { "Workout list is empty" }
                 list.map { validateAndSanitizeWorkout(it, generateNewIds) }
             } else {
-                val single = jsonFormat.decodeFromString<Workout>(raw)
+                val single = jsonFormat.decodeFromString<Workout>(payload)
                 listOf(validateAndSanitizeWorkout(single, generateNewIds))
             }
         }
@@ -78,4 +118,3 @@ object WorkoutJsonCodec {
         )
     }
 }
-

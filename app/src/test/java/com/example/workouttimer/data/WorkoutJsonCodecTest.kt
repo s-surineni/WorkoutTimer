@@ -69,6 +69,52 @@ class WorkoutJsonCodecTest {
     }
 
     @Test
+    fun decodeWorkout_fromChatMessageWithHeader_extractsAndDecodesSuccessfully() {
+        val chatMessage = """
+            Hey check out this workout!
+            Tabata Routine: Leg Destroyer
+            3 Rounds • 2 Exercises
+            
+            JSON:
+            ${WorkoutJsonCodec.encodeWorkout(sampleWorkout)}
+            
+            Let's do this tomorrow morning!
+        """.trimIndent()
+
+        val result = WorkoutJsonCodec.decodeWorkout(chatMessage)
+        assertTrue(result.isSuccess)
+        val workout = result.getOrThrow()
+        assertEquals("Leg Destroyer", workout.title)
+        assertEquals(2, workout.exercises.size)
+    }
+
+    @Test
+    fun decodeWorkout_fromMarkdownCodeFence_extractsAndDecodesSuccessfully() {
+        val markdownText = """
+            Here is the routine definition:
+            ```json
+            ${WorkoutJsonCodec.encodeWorkout(sampleWorkout)}
+            ```
+        """.trimIndent()
+
+        val result = WorkoutJsonCodec.decodeWorkout(markdownText)
+        assertTrue(result.isSuccess)
+        val workout = result.getOrThrow()
+        assertEquals("Leg Destroyer", workout.title)
+    }
+
+    @Test
+    fun presetRoutines_allValidAndDecodable() {
+        assertTrue(PresetRoutines.allPresets.isNotEmpty())
+        PresetRoutines.allPresets.forEach { preset ->
+            assertTrue(preset.title.isNotBlank())
+            assertTrue(preset.rounds > 0)
+            assertTrue(preset.exercises.isNotEmpty())
+            assertTrue(preset.totalDurationSeconds > 0)
+        }
+    }
+
+    @Test
     fun decodeWorkout_invalidJson_returnsFailure() {
         val malformedJson = "{ invalid json content }"
         val result = WorkoutJsonCodec.decodeWorkout(malformedJson)
@@ -110,4 +156,3 @@ class WorkoutJsonCodecTest {
         assertTrue(result.isFailure)
     }
 }
-

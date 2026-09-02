@@ -1,6 +1,9 @@
 package com.example.workouttimer.ui.main
 
 import android.content.Intent
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -21,6 +24,7 @@ import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.DeleteSweep
 import androidx.compose.material.icons.filled.EmojiEvents
 import androidx.compose.material.icons.filled.FileDownload
+import androidx.compose.material.icons.filled.FileUpload
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Timer
@@ -83,6 +87,23 @@ fun MainScreen(
     val state by viewModel.uiState.collectAsStateWithLifecycle()
     val activeWorkout by viewModel.activeWorkout.collectAsStateWithLifecycle()
 
+    val createBackupLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/json")
+    ) { uri: Uri? ->
+        uri?.let {
+            val currentWorkouts = (state as? MainScreenUiState.Success)?.workouts ?: emptyList()
+            if (currentWorkouts.isNotEmpty()) {
+                try {
+                    val json = WorkoutJsonCodec.encodeWorkouts(currentWorkouts)
+                    context.contentResolver.openOutputStream(uri)?.use { stream ->
+                        stream.bufferedWriter().use { it.write(json) }
+                    }
+                } catch (_: Exception) {
+                }
+            }
+        }
+    }
+
     activeWorkout?.let { workout ->
         TabataTimerRunner(
             workout = workout,
@@ -120,6 +141,10 @@ fun MainScreen(
                     }
                     context.startActivity(Intent.createChooser(shareIntent, "Share Workout Routine"))
                 },
+                onExportAllWorkouts = {
+                    val timestamp = SimpleDateFormat("yyyyMMdd_HHmm", Locale.getDefault()).format(Date())
+                    createBackupLauncher.launch("workout_routines_backup_$timestamp.json")
+                },
                 onImportWorkouts = { importedList ->
                     importedList.forEach { viewModel.addWorkout(it) }
                 },
@@ -149,6 +174,7 @@ internal fun MainScreenContent(
     onDeleteWorkout: (String) -> Unit,
     onClearHistory: () -> Unit = {},
     onShareWorkout: (Workout) -> Unit = {},
+    onExportAllWorkouts: () -> Unit = {},
     onImportWorkouts: (List<Workout>) -> Unit = {},
     modifier: Modifier = Modifier
 ) {
@@ -157,7 +183,7 @@ internal fun MainScreenContent(
     var showClearHistoryDialog by remember { mutableStateOf(false) }
     var showImportDialog by remember { mutableStateOf(false) }
 
-    // Dialog for importing workouts from JSON
+    // Dialog for importing workouts from JSON / Presets
     if (showImportDialog) {
         ImportWorkoutDialog(
             onDismiss = { showImportDialog = false },
@@ -266,6 +292,15 @@ internal fun MainScreenContent(
                 title = { Text("Tabata Workout Timer") },
                 actions = {
                     if (selectedTabIndex == 0) {
+                        if (workouts.isNotEmpty()) {
+                            IconButton(onClick = onExportAllWorkouts) {
+                                Icon(
+                                    imageVector = Icons.Default.FileUpload,
+                                    contentDescription = "Export All Routines",
+                                    tint = MaterialTheme.colorScheme.onPrimaryContainer
+                                )
+                            }
+                        }
                         IconButton(onClick = { showImportDialog = true }) {
                             Icon(
                                 imageVector = Icons.Default.FileDownload,
@@ -373,7 +408,7 @@ private fun RoutinesTabContent(
                 )
                 Spacer(modifier = Modifier.height(8.dp))
                 Text(
-                    text = "Tap the + button below to create your first multi-exercise Tabata workout.",
+                    text = "Tap the + button below to create your first routine, or import ready-to-go workouts from the top menu.",
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
@@ -618,7 +653,8 @@ fun MainScreenPreview() {
             onEditClick = {},
             onStartWorkout = {},
             onDeleteWorkout = {},
-            onClearHistory = {}
+            onClearHistory = {},
+            onExportAllWorkouts = {}
         )
     }
 }
@@ -634,7 +670,8 @@ fun MainScreenEmptyPreview() {
             onEditClick = {},
             onStartWorkout = {},
             onDeleteWorkout = {},
-            onClearHistory = {}
+            onClearHistory = {},
+            onExportAllWorkouts = {}
         )
     }
 }

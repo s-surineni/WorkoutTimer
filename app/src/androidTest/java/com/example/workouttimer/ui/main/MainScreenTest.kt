@@ -27,6 +27,8 @@ class MainScreenTest {
         onEditClick = {},
         onStartWorkout = {},
         onDeleteWorkout = {}
+        onDeleteWorkout = {},
+        onExportAllWorkouts = {}
       )
     }
   }
@@ -55,9 +57,22 @@ class MainScreenTest {
 
   @Test
   fun importRoutineButton_opensImportDialog() {
+  fun exportAllRoutinesButton_exists() {
+    composeTestRule.onNodeWithContentDescription("Export All Routines").assertExists()
+  }
+
+  @Test
+  fun importRoutineButton_opensImportDialogWithTabs() {
     composeTestRule.onNodeWithContentDescription("Import Routine").performClick()
     composeTestRule.onNodeWithText("Import Workout Routines").assertExists()
     composeTestRule.onNodeWithText("Select JSON File").assertExists()
+    composeTestRule.onNodeWithText("Import Workouts").assertExists()
+    composeTestRule.onNodeWithText("File / Paste").assertExists()
+    composeTestRule.onNodeWithText("Preset Library").assertExists()
+
+    // Test switching to Preset Library tab
+    composeTestRule.onNodeWithText("Preset Library").performClick()
+    composeTestRule.onNodeWithText("Full Body HIIT Ignition").assertExists()
     composeTestRule.onNodeWithText("Cancel").assertExists()
   }
 
