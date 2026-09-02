@@ -26,7 +26,6 @@ class MainScreenTest {
         onAddClick = {},
         onEditClick = {},
         onStartWorkout = {},
-        onDeleteWorkout = {}
         onDeleteWorkout = {},
         onExportAllWorkouts = {}
       )
@@ -56,7 +55,6 @@ class MainScreenTest {
   }
 
   @Test
-  fun importRoutineButton_opensImportDialog() {
   fun exportAllRoutinesButton_exists() {
     composeTestRule.onNodeWithContentDescription("Export All Routines").assertExists()
   }
@@ -64,8 +62,6 @@ class MainScreenTest {
   @Test
   fun importRoutineButton_opensImportDialogWithTabs() {
     composeTestRule.onNodeWithContentDescription("Import Routine").performClick()
-    composeTestRule.onNodeWithText("Import Workout Routines").assertExists()
-    composeTestRule.onNodeWithText("Select JSON File").assertExists()
     composeTestRule.onNodeWithText("Import Workouts").assertExists()
     composeTestRule.onNodeWithText("File / Paste").assertExists()
     composeTestRule.onNodeWithText("Preset Library").assertExists()

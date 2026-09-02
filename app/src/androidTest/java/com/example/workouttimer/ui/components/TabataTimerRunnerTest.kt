@@ -40,6 +40,7 @@ class TabataTimerRunnerTest {
         composeTestRule.onNodeWithText("HIIT Sprint").assertExists()
         composeTestRule.onNodeWithText("GET READY").assertExists()
         composeTestRule.onNodeWithText("High Knees").assertExists()
+        composeTestRule.onNodeWithContentDescription("Lock Screen").assertExists()
         composeTestRule.onNodeWithContentDescription("Mute Sound").assertExists()
         composeTestRule.onNodeWithContentDescription("Close Timer").assertExists()
     }
@@ -59,6 +60,27 @@ class TabataTimerRunnerTest {
         soundButton.performClick()
 
         composeTestRule.onNodeWithContentDescription("Unmute Sound").assertExists()
+    }
+
+    @Test
+    fun tabataTimerRunner_screenLock_disablesControlsAndUnlocksOnButton() {
+        composeTestRule.setContent {
+            TabataTimerRunner(
+                workout = sampleWorkout,
+                onDismiss = {},
+                audioFeedbackManager = NoOpAudioFeedbackManager()
+            )
+        }
+
+        // Lock screen
+        composeTestRule.onNodeWithContentDescription("Lock Screen").performClick()
+        composeTestRule.onNodeWithContentDescription("Unlock Screen").assertExists()
+        composeTestRule.onNodeWithText("Screen Locked").assertExists()
+        composeTestRule.onNodeWithText("Unlock").assertExists()
+
+        // Unlock screen
+        composeTestRule.onNodeWithText("Unlock").performClick()
+        composeTestRule.onNodeWithContentDescription("Lock Screen").assertExists()
     }
 
     @Test
