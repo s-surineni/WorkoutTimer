@@ -2,6 +2,7 @@ package com.example.workouttimer.ui.components
 
 import android.app.Activity
 import android.view.WindowManager
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.tween
@@ -60,6 +61,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -67,6 +69,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
+import androidx.compose.ui.window.DialogWindowProvider
 import androidx.core.view.WindowCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.core.view.WindowInsetsControllerCompat
@@ -88,8 +91,8 @@ enum class TabataPhase {
 
 /**
  * Full interactive Tabata Workout Timer Runner with distinct, high-contrast colors
- * for Work and Rest intervals, immersive full-screen display, accidental touch locking,
- * audio feedback cues, and round transitions.
+ * for Work and Rest intervals, immersive full-screen display (hiding navigation & status bars),
+ * accidental touch locking, audio feedback cues, and round transitions.
  */
 @Composable
 fun TabataTimerRunner(
@@ -106,21 +109,6 @@ fun TabataTimerRunner(
 
     val context = LocalContext.current
 
-    // Keep screen awake and enable Immersive Fullscreen mode during active workouts
-    DisposableEffect(Unit) {
-        val window = (context as? Activity)?.window
-        window?.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-
-        val insetsController = window?.let { WindowCompat.getInsetsController(it, it.decorView) }
-        insetsController?.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
-        insetsController?.hide(WindowInsetsCompat.Type.systemBars())
-
-        onDispose {
-            window?.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
-            insetsController?.show(WindowInsetsCompat.Type.systemBars())
-        }
-    }
-
     DisposableEffect(audioFeedbackManager) {
         onDispose {
             audioFeedbackManager.release()
@@ -134,6 +122,13 @@ fun TabataTimerRunner(
     var isRunning by remember { mutableStateOf(true) }
     var isSoundEnabled by remember { mutableStateOf(true) }
     var isScreenLocked by remember { mutableStateOf(false) }
+
+    // Intercept back button gestures during workouts
+    BackHandler(enabled = true) {
+        if (!isScreenLocked) {
+            onDismiss()
+        }
+    }
 
     val currentExercise = workout.exercises.getOrNull(currentExerciseIndex) ?: workout.exercises.first()
     val nextExercise = when {
@@ -335,8 +330,37 @@ fun TabataTimerRunner(
         onDismissRequest = {
             if (!isScreenLocked) onDismiss()
         },
-        properties = DialogProperties(usePlatformDefaultWidth = false)
+        properties = DialogProperties(
+            usePlatformDefaultWidth = false,
+            decorFitsSystemWindows = false
+        )
     ) {
+        val view = LocalView.current
+
+        // Hide navigation bars (Home, Back, Recents) and status bar on the dialog window
+        DisposableEffect(view) {
+            val dialogWindow = (view.parent as? DialogWindowProvider)?.window
+                ?: (context as? Activity)?.window
+
+            dialogWindow?.let { win ->
+                win.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                WindowCompat.setDecorFitsSystemWindows(win, false)
+                val insetsController = WindowCompat.getInsetsController(win, win.decorView)
+                insetsController.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+                insetsController.hide(WindowInsetsCompat.Type.systemBars())
+                insetsController.hide(WindowInsetsCompat.Type.navigationBars())
+                insetsController.hide(WindowInsetsCompat.Type.statusBars())
+            }
+
+            onDispose {
+                dialogWindow?.let { win ->
+                    win.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                    val insetsController = WindowCompat.getInsetsController(win, win.decorView)
+                    insetsController.show(WindowInsetsCompat.Type.systemBars())
+                }
+            }
+        }
+
         Surface(
             modifier = modifier.fillMaxSize(),
             color = MaterialTheme.colorScheme.background
