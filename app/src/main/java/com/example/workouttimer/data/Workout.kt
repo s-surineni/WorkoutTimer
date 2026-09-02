@@ -19,11 +19,14 @@ data class Workout(
 ) {
     /**
      * Total duration of the workout in seconds, including all exercise work, rest,
-     * and rest periods between rounds.
+     * and rest periods between rounds. The rest interval after the final exercise
+     * in a routine is excluded.
      */
     val totalDurationSeconds: Int
         get() {
-            val singleRoundDuration = exercises.sumOf { it.workSeconds + it.restSeconds }
+            val singleRoundWork = exercises.sumOf { it.workSeconds }
+            val singleRoundRest = exercises.dropLast(1).sumOf { it.restSeconds }
+            val singleRoundDuration = singleRoundWork + singleRoundRest
             val totalRoundsDuration = singleRoundDuration * rounds
             val interRoundRestDuration = (rounds - 1).coerceAtLeast(0) * restBetweenRoundsSeconds
             return totalRoundsDuration + interRoundRestDuration

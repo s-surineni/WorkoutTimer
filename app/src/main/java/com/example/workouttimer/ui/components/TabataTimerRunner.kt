@@ -149,11 +149,11 @@ fun TabataTimerRunner(
                 playPhaseSound(TabataPhase.WORK)
             }
             TabataPhase.WORK -> {
-                if (currentExercise.restSeconds > 0) {
+                val isLastExerciseInRound = currentExerciseIndex + 1 >= workout.exercises.size
+                if (!isLastExerciseInRound && currentExercise.restSeconds > 0) {
                     phase = TabataPhase.REST
                     timeLeft = currentExercise.restSeconds
                     playPhaseSound(TabataPhase.REST)
-                } else if (currentExerciseIndex + 1 < workout.exercises.size) {
                     currentExerciseIndex += 1
                     phase = TabataPhase.WORK
                     timeLeft = workout.exercises[currentExerciseIndex].workSeconds

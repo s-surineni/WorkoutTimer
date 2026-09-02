@@ -6,7 +6,7 @@ import org.junit.Test
 class WorkoutTest {
 
   @Test
-  fun totalDurationSeconds_singleRound_computesCorrectly() {
+  fun totalDurationSeconds_singleRound_computesCorrectlyWithoutLastExerciseRest() {
     val workout = Workout(
       title = "Quick Tabata",
       rounds = 1,
@@ -16,13 +16,13 @@ class WorkoutTest {
         Exercise(name = "Plank", workSeconds = 20, restSeconds = 10)
       )
     )
-    // (20 + 10 + 20 + 10) * 1 + 0 = 60s
-    assertEquals(60, workout.totalDurationSeconds)
-    assertEquals("1:00", workout.formattedTotalDuration())
+    // Ex 1 (20s work + 10s rest) + Ex 2 (20s work + 0s rest) = 50s
+    assertEquals(50, workout.totalDurationSeconds)
+    assertEquals("0:50", workout.formattedTotalDuration())
   }
 
   @Test
-  fun totalDurationSeconds_multipleRounds_includesInterRoundRest() {
+  fun totalDurationSeconds_multipleRounds_includesInterRoundRestWithoutLastExerciseRest() {
     val workout = Workout(
       title = "2 Round Tabata",
       rounds = 2,
@@ -31,9 +31,9 @@ class WorkoutTest {
         Exercise(name = "Squats", workSeconds = 20, restSeconds = 10)
       )
     )
-    // (30 * 2) + 30 = 90s
-    assertEquals(90, workout.totalDurationSeconds)
-    assertEquals("1:30", workout.formattedTotalDuration())
+    // Round 1 (20s work + 30s inter-round rest) + Round 2 (20s work) = 70s
+    assertEquals(70, workout.totalDurationSeconds)
+    assertEquals("1:10", workout.formattedTotalDuration())
   }
 
   @Test
@@ -46,9 +46,8 @@ class WorkoutTest {
         Exercise(name = "Endurance Run", workSeconds = 40, restSeconds = 20)
       )
     )
-    // 100 * 60 + 99 * 60 = 6000 + 5940 = 11940s = 3 hours, 19 mins, 0 secs
-    assertEquals(11940, workout.totalDurationSeconds)
-    assertEquals("3:19:00", workout.formattedTotalDuration())
+    // 100 * 40 + 99 * 60 = 4000 + 5940 = 9940s = 2 hours, 45 mins, 40 secs
+    assertEquals(9940, workout.totalDurationSeconds)
+    assertEquals("2:45:40", workout.formattedTotalDuration())
   }
 }
-

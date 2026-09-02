@@ -111,7 +111,9 @@ fun CreateTabataScreen(
     val currentTotalDurationSeconds by remember {
         derivedStateOf {
             val restBetweenRounds = restBetweenRoundsText.toIntOrNull() ?: 0
-            val singleRound = exercises.sumOf { it.workSeconds + it.restSeconds }
+            val singleRoundWork = exercises.sumOf { it.workSeconds }
+            val singleRoundRest = exercises.dropLast(1).sumOf { it.restSeconds }
+            val singleRound = singleRoundWork + singleRoundRest
             (singleRound * rounds) + ((rounds - 1).coerceAtLeast(0) * restBetweenRounds)
         }
     }
@@ -445,8 +447,13 @@ fun CreateTabataScreen(
                                             style = MaterialTheme.typography.titleMedium,
                                             fontWeight = FontWeight.SemiBold
                                         )
+                                        val isLastInList = index == exercises.lastIndex
                                         Text(
-                                            text = "Work: ${exercise.workSeconds}s  •  Rest: ${exercise.restSeconds}s",
+                                            text = if (isLastInList) {
+                                                "Work: ${exercise.workSeconds}s  •  No Rest (End of Routine)"
+                                            } else {
+                                                "Work: ${exercise.workSeconds}s  •  Rest: ${exercise.restSeconds}s"
+                                            },
                                             style = MaterialTheme.typography.bodySmall,
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                         )
