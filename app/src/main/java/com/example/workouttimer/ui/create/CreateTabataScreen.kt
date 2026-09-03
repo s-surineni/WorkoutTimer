@@ -458,16 +458,16 @@ fun CreateTabataScreen(
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
                         ) {
-                            Row(
+                            Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(horizontal = 16.dp, vertical = 12.dp),
-                                horizontalArrangement = Arrangement.SpaceBetween,
-                                verticalAlignment = Alignment.CenterVertically
+                                    .padding(16.dp),
+                                verticalArrangement = Arrangement.spacedBy(8.dp)
                             ) {
+                                // Top row: Number circle, Exercise Name & Timers
                                 Row(
                                     verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.weight(1f)
+                                    modifier = Modifier.fillMaxWidth()
                                 ) {
                                     Box(
                                         modifier = Modifier
@@ -486,7 +486,7 @@ fun CreateTabataScreen(
 
                                     Spacer(modifier = Modifier.width(12.dp))
 
-                                    Column {
+                                    Column(modifier = Modifier.weight(1f)) {
                                         Text(
                                             text = exercise.name,
                                             style = MaterialTheme.typography.titleMedium,
@@ -505,7 +505,12 @@ fun CreateTabataScreen(
                                     }
                                 }
 
-                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Bottom row: Individual exercise action buttons on a separate line
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.End,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
                                     IconButton(onClick = { editingExerciseIndex = index }) {
                                         Icon(
                                             imageVector = Icons.Default.Edit,
