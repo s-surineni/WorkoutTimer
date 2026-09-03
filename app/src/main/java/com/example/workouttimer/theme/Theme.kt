@@ -10,19 +10,19 @@ import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.platform.LocalContext
 
-private val NeonDarkColorScheme = darkColorScheme(
-    primary = NeonGreenPrimaryDark,
-    onPrimary = NeonGreenOnPrimaryDark,
-    primaryContainer = NeonGreenPrimaryContainerDark,
-    onPrimaryContainer = NeonGreenOnPrimaryContainerDark,
-    secondary = CyanSecondaryDark,
-    onSecondary = CyanOnSecondaryDark,
-    secondaryContainer = CyanSecondaryContainerDark,
-    onSecondaryContainer = CyanOnSecondaryContainerDark,
-    tertiary = VioletTertiaryDark,
-    onTertiary = VioletOnTertiaryDark,
-    tertiaryContainer = VioletTertiaryContainerDark,
-    onTertiaryContainer = VioletOnTertiaryContainerDark,
+private val CobaltDarkColorScheme = darkColorScheme(
+    primary = CobaltPrimaryDark,
+    onPrimary = CobaltOnPrimaryDark,
+    primaryContainer = CobaltPrimaryContainerDark,
+    onPrimaryContainer = CobaltOnPrimaryContainerDark,
+    secondary = CoralSecondaryDark,
+    onSecondary = CoralOnSecondaryDark,
+    secondaryContainer = CoralSecondaryContainerDark,
+    onSecondaryContainer = CoralOnSecondaryContainerDark,
+    tertiary = EmeraldTertiaryDark,
+    onTertiary = EmeraldOnTertiaryDark,
+    tertiaryContainer = EmeraldTertiaryContainerDark,
+    onTertiaryContainer = EmeraldOnTertiaryContainerDark,
     background = BackgroundDark,
     onBackground = OnBackgroundDark,
     surface = SurfaceDark,
@@ -32,19 +32,19 @@ private val NeonDarkColorScheme = darkColorScheme(
     outline = OutlineDark
 )
 
-private val NeonLightColorScheme = lightColorScheme(
-    primary = NeonGreenPrimaryLight,
-    onPrimary = NeonGreenOnPrimaryLight,
-    primaryContainer = NeonGreenPrimaryContainerLight,
-    onPrimaryContainer = NeonGreenOnPrimaryContainerLight,
-    secondary = CyanSecondaryLight,
-    onSecondary = CyanOnSecondaryLight,
-    secondaryContainer = CyanSecondaryContainerLight,
-    onSecondaryContainer = CyanOnSecondaryContainerLight,
-    tertiary = VioletTertiaryLight,
-    onTertiary = VioletOnTertiaryLight,
-    tertiaryContainer = VioletTertiaryContainerLight,
-    onTertiaryContainer = VioletOnTertiaryContainerLight,
+private val CobaltLightColorScheme = lightColorScheme(
+    primary = CobaltPrimaryLight,
+    onPrimary = CobaltOnPrimaryLight,
+    primaryContainer = CobaltPrimaryContainerLight,
+    onPrimaryContainer = CobaltOnPrimaryContainerLight,
+    secondary = CoralSecondaryLight,
+    onSecondary = CoralOnSecondaryLight,
+    secondaryContainer = CoralSecondaryContainerLight,
+    onSecondaryContainer = CoralOnSecondaryContainerLight,
+    tertiary = EmeraldTertiaryLight,
+    onTertiary = EmeraldOnTertiaryLight,
+    tertiaryContainer = EmeraldTertiaryContainerLight,
+    onTertiaryContainer = EmeraldOnTertiaryContainerLight,
     background = BackgroundLight,
     onBackground = OnBackgroundLight,
     surface = SurfaceLight,
@@ -57,7 +57,7 @@ private val NeonLightColorScheme = lightColorScheme(
 @Composable
 fun WorkoutTimerTheme(
     darkTheme: Boolean = isSystemInDarkTheme(),
-    // Default to false so our vibrant Modern Neon Fitness color scheme is active
+    // Default to false so our vibrant Royal Cobalt & Coral color scheme is active
     dynamicColor: Boolean = false,
     content: @Composable () -> Unit,
 ) {
@@ -66,8 +66,8 @@ fun WorkoutTimerTheme(
             val context = LocalContext.current
             if (darkTheme) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
         }
-        darkTheme -> NeonDarkColorScheme
-        else -> NeonLightColorScheme
+        darkTheme -> CobaltDarkColorScheme
+        else -> CobaltLightColorScheme
     }
 
     MaterialTheme(

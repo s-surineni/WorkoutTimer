@@ -3,44 +3,44 @@ package com.example.workouttimer.theme
 import androidx.compose.ui.graphics.Color
 
 // ================================================================
-// Modern Neon Fitness Theme Palette (Neon Lime, Cyan & Obsidian)
+// Premium Royal Cobalt & Sunset Coral Palette
 // ================================================================
 
-// Primary: Luminous Neon Lime / Volt
-val NeonGreenPrimaryLight = Color(0xFF16A34A)       // Crisp Athletic Green (WCAG AA compliant)
-val NeonGreenOnPrimaryLight = Color(0xFFFFFFFF)
-val NeonGreenPrimaryContainerLight = Color(0xFFDCFCE7)
-val NeonGreenOnPrimaryContainerLight = Color(0xFF052E16)
+// Primary: Royal Cobalt / Electric Sapphire Blue
+val CobaltPrimaryLight = Color(0xFF1D4ED8)
+val CobaltOnPrimaryLight = Color(0xFFFFFFFF)
+val CobaltPrimaryContainerLight = Color(0xFFDBEAFE)
+val CobaltOnPrimaryContainerLight = Color(0xFF1E3A8A)
 
-val NeonGreenPrimaryDark = Color(0xFF4ADE80)        // Electric Luminous Lime
-val NeonGreenOnPrimaryDark = Color(0xFF052E16)
-val NeonGreenPrimaryContainerDark = Color(0xFF14532D)
-val NeonGreenOnPrimaryContainerDark = Color(0xFFDCFCE7)
+val CobaltPrimaryDark = Color(0xFF60A5FA)
+val CobaltOnPrimaryDark = Color(0xFF0A2559)
+val CobaltPrimaryContainerDark = Color(0xFF1E40AF)
+val CobaltOnPrimaryContainerDark = Color(0xFFDBEAFE)
 
-// Secondary: Electric Cyan / Bright Aqua
-val CyanSecondaryLight = Color(0xFF0E7490)          // Deep Teal Cyan
-val CyanOnSecondaryLight = Color(0xFFFFFFFF)
-val CyanSecondaryContainerLight = Color(0xFFCFFAFE)
-val CyanOnSecondaryContainerLight = Color(0xFF083344)
+// Secondary: Sunset Coral / Punchy Athletic Coral
+val CoralSecondaryLight = Color(0xFFC2410C)
+val CoralOnSecondaryLight = Color(0xFFFFFFFF)
+val CoralSecondaryContainerLight = Color(0xFFFFEDD5)
+val CoralOnSecondaryContainerLight = Color(0xFF7C2D12)
 
-val CyanSecondaryDark = Color(0xFF38BDF8)           // Vivid Electric Cyan
-val CyanOnSecondaryDark = Color(0xFF083344)
-val CyanSecondaryContainerDark = Color(0xFF155E75)
-val CyanOnSecondaryContainerDark = Color(0xFFCFFAFE)
+val CoralSecondaryDark = Color(0xFFFB923C)
+val CoralOnSecondaryDark = Color(0xFF431407)
+val CoralSecondaryContainerDark = Color(0xFF7C2D12)
+val CoralOnSecondaryContainerDark = Color(0xFFFFEDD5)
 
-// Tertiary: Ultraviolet / Electric Purple
-val VioletTertiaryLight = Color(0xFF6D28D9)
-val VioletOnTertiaryLight = Color(0xFFFFFFFF)
-val VioletTertiaryContainerLight = Color(0xFFEDE9FE)
-val VioletOnTertiaryContainerLight = Color(0xFF2E1065)
+// Tertiary: Active Emerald Mint
+val EmeraldTertiaryLight = Color(0xFF059669)
+val EmeraldOnTertiaryLight = Color(0xFFFFFFFF)
+val EmeraldTertiaryContainerLight = Color(0xFFD1FAE5)
+val EmeraldOnTertiaryContainerLight = Color(0xFF064E3B)
 
-val VioletTertiaryDark = Color(0xFFA78BFA)
-val VioletOnTertiaryDark = Color(0xFF2E1065)
-val VioletTertiaryContainerDark = Color(0xFF5B21B6)
-val VioletOnTertiaryContainerDark = Color(0xFFEDE9FE)
+val EmeraldTertiaryDark = Color(0xFF34D399)
+val EmeraldOnTertiaryDark = Color(0xFF064E3B)
+val EmeraldTertiaryContainerDark = Color(0xFF065F46)
+val EmeraldOnTertiaryContainerDark = Color(0xFFD1FAE5)
 
-// Background & Surface - Light (Clean Crisp Ice White & Silver)
-val BackgroundLight = Color(0xFFF8FAF9)
+// Background & Surface - Light (Pure Clean Slate)
+val BackgroundLight = Color(0xFFF8FAFC)
 val OnBackgroundLight = Color(0xFF0F172A)
 val SurfaceLight = Color(0xFFFFFFFF)
 val OnSurfaceLight = Color(0xFF0F172A)
@@ -48,11 +48,11 @@ val SurfaceVariantLight = Color(0xFFE2E8F0)
 val OnSurfaceVariantLight = Color(0xFF475569)
 val OutlineLight = Color(0xFF94A3B8)
 
-// Background & Surface - Dark (Deep Obsidian / Onyx Fitness Aesthetic)
-val BackgroundDark = Color(0xFF090D0C)
+// Background & Surface - Dark (Deep Midnight Navy / Charcoal Slate)
+val BackgroundDark = Color(0xFF0B0F19)
 val OnBackgroundDark = Color(0xFFF1F5F9)
-val SurfaceDark = Color(0xFF0E1412)
+val SurfaceDark = Color(0xFF111827)
 val OnSurfaceDark = Color(0xFFF1F5F9)
-val SurfaceVariantDark = Color(0xFF1B2622)
+val SurfaceVariantDark = Color(0xFF1F2937)
 val OnSurfaceVariantDark = Color(0xFFCBD5E1)
 val OutlineDark = Color(0xFF475569)
