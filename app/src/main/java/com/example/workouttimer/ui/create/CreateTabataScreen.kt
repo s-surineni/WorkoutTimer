@@ -302,7 +302,7 @@ fun CreateTabataScreen(
                 modifier = Modifier.fillMaxWidth()
             )
 
-            // Rounds configuration card
+            // Rounds Configuration Card
             Card(
                 shape = RoundedCornerShape(16.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
@@ -341,7 +341,7 @@ fun CreateTabataScreen(
                         }
                     }
 
-                    // Round preset chips
+                    // Round preset chips (clean numbers)
                     FlowRow(
                         horizontalArrangement = Arrangement.spacedBy(6.dp),
                         modifier = Modifier.fillMaxWidth()
@@ -349,16 +349,28 @@ fun CreateTabataScreen(
                         listOf(1, 2, 3, 4, 6, 8).forEach { r ->
                             SuggestionChip(
                                 onClick = { rounds = r },
-                                label = { Text("$r Round${if (r > 1) "s" else ""}") }
+                                label = { Text("$r") }
                             )
                         }
                     }
+                }
+            }
 
-                    // Rest between rounds
+            // Rest Between Rounds Configuration Card
+            Card(
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+            ) {
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
                     OutlinedTextField(
                         value = restBetweenRoundsText,
                         onValueChange = { restBetweenRoundsText = it.filter { c -> c.isDigit() } },
-                        label = { Text("Rest Between Rounds (seconds)") },
+                        label = { Text("Rest Between Rounds") },
                         suffix = { Text("s") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
@@ -375,7 +387,7 @@ fun CreateTabataScreen(
                         listOf(15, 30, 45, 60).forEach { s ->
                             SuggestionChip(
                                 onClick = { restBetweenRoundsText = s.toString() },
-                                label = { Text("${s}s Rest") }
+                                label = { Text("${s}s") }
                             )
                         }
                     }
