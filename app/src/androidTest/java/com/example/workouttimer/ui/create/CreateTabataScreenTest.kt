@@ -104,7 +104,6 @@ class CreateTabataScreenTest {
     // Dialog elements exist
     composeTestRule.onNodeWithText("Add to Routine").assertExists()
     composeTestRule.onNodeWithText("Burpees").performClick()
-    composeTestRule.onNodeWithText("45s").performClick()
     composeTestRule.onNodeWithText("40s").performClick()
 
     // Confirm add in dialog

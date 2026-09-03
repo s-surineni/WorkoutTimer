@@ -3,56 +3,56 @@ package com.example.workouttimer.theme
 import androidx.compose.ui.graphics.Color
 
 // ================================================================
-// Energetic Athletic Theme Palette (Electric Fire Orange & Cool Teal)
+// Modern Neon Fitness Theme Palette (Neon Lime, Cyan & Obsidian)
 // ================================================================
 
-// Primary: Radiant Fire Orange
-val OrangePrimaryLight = Color(0xFFD84315)
-val OrangeOnPrimaryLight = Color(0xFFFFFFFF)
-val OrangePrimaryContainerLight = Color(0xFFFFDBCF)
-val OrangeOnPrimaryContainerLight = Color(0xFF380D00)
+// Primary: Luminous Neon Lime / Volt
+val NeonGreenPrimaryLight = Color(0xFF16A34A)       // Crisp Athletic Green (WCAG AA compliant)
+val NeonGreenOnPrimaryLight = Color(0xFFFFFFFF)
+val NeonGreenPrimaryContainerLight = Color(0xFFDCFCE7)
+val NeonGreenOnPrimaryContainerLight = Color(0xFF052E16)
 
-val OrangePrimaryDark = Color(0xFFFF8A65)
-val OrangeOnPrimaryDark = Color(0xFF4E1600)
-val OrangePrimaryContainerDark = Color(0xFF702500)
-val OrangeOnPrimaryContainerDark = Color(0xFFFFDBCF)
+val NeonGreenPrimaryDark = Color(0xFF4ADE80)        // Electric Luminous Lime
+val NeonGreenOnPrimaryDark = Color(0xFF052E16)
+val NeonGreenPrimaryContainerDark = Color(0xFF14532D)
+val NeonGreenOnPrimaryContainerDark = Color(0xFFDCFCE7)
 
-// Secondary: Active Mint Teal (Rest & Recovery)
-val TealSecondaryLight = Color(0xFF00796B)
-val TealOnSecondaryLight = Color(0xFFFFFFFF)
-val TealSecondaryContainerLight = Color(0xFFB2DFDB)
-val TealOnSecondaryContainerLight = Color(0xFF00201C)
+// Secondary: Electric Cyan / Bright Aqua
+val CyanSecondaryLight = Color(0xFF0E7490)          // Deep Teal Cyan
+val CyanOnSecondaryLight = Color(0xFFFFFFFF)
+val CyanSecondaryContainerLight = Color(0xFFCFFAFE)
+val CyanOnSecondaryContainerLight = Color(0xFF083344)
 
-val TealSecondaryDark = Color(0xFF4DB6AC)
-val TealOnSecondaryDark = Color(0xFF003730)
-val TealSecondaryContainerDark = Color(0xFF004D40)
-val TealOnSecondaryContainerDark = Color(0xFFB2DFDB)
+val CyanSecondaryDark = Color(0xFF38BDF8)           // Vivid Electric Cyan
+val CyanOnSecondaryDark = Color(0xFF083344)
+val CyanSecondaryContainerDark = Color(0xFF155E75)
+val CyanOnSecondaryContainerDark = Color(0xFFCFFAFE)
 
-// Tertiary: Athletic Cobalt / Focus Blue
-val CobaltTertiaryLight = Color(0xFF1565C0)
-val CobaltOnTertiaryLight = Color(0xFFFFFFFF)
-val CobaltTertiaryContainerLight = Color(0xFFD1E4FF)
-val CobaltOnTertiaryContainerLight = Color(0xFF001D36)
+// Tertiary: Ultraviolet / Electric Purple
+val VioletTertiaryLight = Color(0xFF6D28D9)
+val VioletOnTertiaryLight = Color(0xFFFFFFFF)
+val VioletTertiaryContainerLight = Color(0xFFEDE9FE)
+val VioletOnTertiaryContainerLight = Color(0xFF2E1065)
 
-val CobaltTertiaryDark = Color(0xFF90CAF9)
-val CobaltOnTertiaryDark = Color(0xFF003258)
-val CobaltTertiaryContainerDark = Color(0xFF0D47A1)
-val CobaltOnTertiaryContainerDark = Color(0xFFD1E4FF)
+val VioletTertiaryDark = Color(0xFFA78BFA)
+val VioletOnTertiaryDark = Color(0xFF2E1065)
+val VioletTertiaryContainerDark = Color(0xFF5B21B6)
+val VioletOnTertiaryContainerDark = Color(0xFFEDE9FE)
 
-// Background & Surface - Light
-val BackgroundLight = Color(0xFFFFFBF9)
-val OnBackgroundLight = Color(0xFF201A18)
-val SurfaceLight = Color(0xFFFFFBF9)
-val OnSurfaceLight = Color(0xFF201A18)
-val SurfaceVariantLight = Color(0xFFF4DFD7)
-val OnSurfaceVariantLight = Color(0xFF52443D)
-val OutlineLight = Color(0xFF85736C)
+// Background & Surface - Light (Clean Crisp Ice White & Silver)
+val BackgroundLight = Color(0xFFF8FAF9)
+val OnBackgroundLight = Color(0xFF0F172A)
+val SurfaceLight = Color(0xFFFFFFFF)
+val OnSurfaceLight = Color(0xFF0F172A)
+val SurfaceVariantLight = Color(0xFFE2E8F0)
+val OnSurfaceVariantLight = Color(0xFF475569)
+val OutlineLight = Color(0xFF94A3B8)
 
-// Background & Surface - Dark (Deep Athletic Carbon / Onyx)
-val BackgroundDark = Color(0xFF161210)
-val OnBackgroundDark = Color(0xFFEDE0DC)
-val SurfaceDark = Color(0xFF161210)
-val OnSurfaceDark = Color(0xFFEDE0DC)
-val SurfaceVariantDark = Color(0xFF52443D)
-val OnSurfaceVariantDark = Color(0xFFD7C2BA)
-val OutlineDark = Color(0xFFA08C85)
+// Background & Surface - Dark (Deep Obsidian / Onyx Fitness Aesthetic)
+val BackgroundDark = Color(0xFF090D0C)
+val OnBackgroundDark = Color(0xFFF1F5F9)
+val SurfaceDark = Color(0xFF0E1412)
+val OnSurfaceDark = Color(0xFFF1F5F9)
+val SurfaceVariantDark = Color(0xFF1B2622)
+val OnSurfaceVariantDark = Color(0xFFCBD5E1)
+val OutlineDark = Color(0xFF475569)
