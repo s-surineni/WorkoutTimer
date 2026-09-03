@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Remove
+import androidx.compose.material.icons.filled.Tune
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -39,8 +40,10 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.PrimaryTabRow
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
+import androidx.compose.material3.Tab
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -68,6 +71,7 @@ import com.example.workouttimer.ui.components.AddEditExerciseDialog
 
 /**
  * Full-page screen to create a new Tabata routine or edit an existing one.
+ * Uses a tabbed layout to separate "Details" and "Exercises".
  * Includes auto-saving on back navigation when all required fields are filled.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -79,6 +83,7 @@ fun CreateTabataScreen(
     initialWorkout: Workout? = null
 ) {
     val isEditMode = initialWorkout != null
+    var selectedTabIndex by remember { mutableIntStateOf(0) }
     var title by remember { mutableStateOf(initialWorkout?.title ?: "") }
     var titleError by remember { mutableStateOf(false) }
     var rounds by remember { mutableIntStateOf(initialWorkout?.rounds ?: 2) }
@@ -179,8 +184,17 @@ fun CreateTabataScreen(
         if (workout != null) {
             onSaveWorkout(workout)
         } else {
-            titleError = title.trim().isEmpty()
-            exerciseListError = exercises.isEmpty()
+            val isTitleBlank = title.trim().isEmpty()
+            val isExercisesEmpty = exercises.isEmpty()
+            titleError = isTitleBlank
+            exerciseListError = isExercisesEmpty
+
+            // Smart tab switching to error location
+            if (isTitleBlank) {
+                selectedTabIndex = 0
+            } else if (isExercisesEmpty) {
+                selectedTabIndex = 1
+            }
         }
     }
 
@@ -232,353 +246,412 @@ fun CreateTabataScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Live Summary Banner
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
+            // Material 3 Tabs
+            PrimaryTabRow(
+                selectedTabIndex = selectedTabIndex,
+                containerColor = MaterialTheme.colorScheme.surface
             ) {
-                Row(
+                Tab(
+                    selected = selectedTabIndex == 0,
+                    onClick = { selectedTabIndex = 0 },
+                    text = { Text("Details") },
+                    icon = { Icon(Icons.Default.Tune, contentDescription = null) }
+                )
+                Tab(
+                    selected = selectedTabIndex == 1,
+                    onClick = { selectedTabIndex = 1 },
+                    text = { Text("Exercises (${exercises.size})") },
+                    icon = { Icon(Icons.Default.FitnessCenter, contentDescription = null) }
+                )
+            }
+
+            // Tab 0: Routine Details Tab Content
+            if (selectedTabIndex == 0) {
+                Column(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                         .padding(16.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    Column {
-                        Text(
-                            text = "Estimated Duration",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = formattedLiveDuration(),
-                            style = MaterialTheme.typography.headlineMedium,
-                            fontWeight = FontWeight.Black,
-                            color = MaterialTheme.colorScheme.primary
-                        )
+                    // Live Summary Banner
+                    LiveSummaryBanner(
+                        durationText = formattedLiveDuration(),
+                        rounds = rounds,
+                        exerciseCount = exercises.size
+                    )
+
+                    Text(
+                        text = "1. Workout Details",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+
+                    OutlinedTextField(
+                        value = title,
+                        onValueChange = {
+                            title = it
+                            if (titleError && it.isNotBlank()) titleError = false
+                        },
+                        label = { Text("Workout Title") },
+                        placeholder = { Text("e.g., Morning HIIT Blast") },
+                        isError = titleError,
+                        supportingText = if (titleError) {
+                            { Text("Workout title cannot be empty") }
+                        } else null,
+                        singleLine = true,
+                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+
+                    // Number of Rounds Configuration Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(
+                                    text = "Number of Rounds: $rounds",
+                                    style = MaterialTheme.typography.titleSmall,
+                                    fontWeight = FontWeight.Bold
+                                )
+
+                                Row(verticalAlignment = Alignment.CenterVertically) {
+                                    FilledTonalIconButton(
+                                        onClick = { if (rounds > 1) rounds -= 1 },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease rounds")
+                                    }
+                                    Spacer(modifier = Modifier.width(8.dp))
+                                    FilledTonalIconButton(
+                                        onClick = { if (rounds < 12) rounds += 1 },
+                                        modifier = Modifier.size(36.dp)
+                                    ) {
+                                        Icon(imageVector = Icons.Default.Add, contentDescription = "Increase rounds")
+                                    }
+                                }
+                            }
+
+                            // Round preset chips (clean numbers)
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                listOf(1, 2, 3, 4, 6, 8).forEach { r ->
+                                    SuggestionChip(
+                                        onClick = { rounds = r },
+                                        label = { Text("$r") }
+                                    )
+                                }
+                            }
+                        }
                     }
 
-                    Column(horizontalAlignment = Alignment.End) {
-                        Text(
-                            text = "$rounds Rounds",
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                        Text(
-                            text = "${exercises.size} Exercises",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                    // Rest Between Rounds Configuration Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            OutlinedTextField(
+                                value = restBetweenRoundsText,
+                                onValueChange = { restBetweenRoundsText = it.filter { c -> c.isDigit() } },
+                                label = { Text("Rest Between Rounds") },
+                                suffix = { Text("s") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                listOf(15, 30, 45, 60).forEach { s ->
+                                    SuggestionChip(
+                                        onClick = { restBetweenRoundsText = s.toString() },
+                                        label = { Text("${s}s") }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }
 
-            // Section 1: Routine Configuration
-            Text(
-                text = "1. Workout Details",
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-            )
-
-            OutlinedTextField(
-                value = title,
-                onValueChange = {
-                    title = it
-                    if (titleError && it.isNotBlank()) titleError = false
-                },
-                label = { Text("Workout Title") },
-                placeholder = { Text("e.g., Morning HIIT Blast") },
-                isError = titleError,
-                supportingText = if (titleError) {
-                    { Text("Workout title cannot be empty") }
-                } else null,
-                singleLine = true,
-                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                modifier = Modifier.fillMaxWidth()
-            )
-
-            // Rounds Configuration Card
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            ) {
+            // Tab 1: Exercises Tab Content
+            if (selectedTabIndex == 1) {
                 Column(
                     modifier = Modifier
-                        .fillMaxWidth()
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
                         .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                    verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
+                    // Live Summary Banner
+                    LiveSummaryBanner(
+                        durationText = formattedLiveDuration(),
+                        rounds = rounds,
+                        exerciseCount = exercises.size
+                    )
+
+                    // Sequence Header
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Number of Rounds: $rounds",
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.Bold
-                        )
-
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            FilledTonalIconButton(
-                                onClick = { if (rounds > 1) rounds -= 1 },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease rounds")
-                            }
-                            Spacer(modifier = Modifier.width(8.dp))
-                            FilledTonalIconButton(
-                                onClick = { if (rounds < 12) rounds += 1 },
-                                modifier = Modifier.size(36.dp)
-                            ) {
-                                Icon(imageVector = Icons.Default.Add, contentDescription = "Increase rounds")
-                            }
-                        }
-                    }
-
-                    // Round preset chips (clean numbers)
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf(1, 2, 3, 4, 6, 8).forEach { r ->
-                            SuggestionChip(
-                                onClick = { rounds = r },
-                                label = { Text("$r") }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Rest Between Rounds Configuration Card
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    OutlinedTextField(
-                        value = restBetweenRoundsText,
-                        onValueChange = { restBetweenRoundsText = it.filter { c -> c.isDigit() } },
-                        label = { Text("Rest Between Rounds") },
-                        suffix = { Text("s") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Done
-                        ),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf(15, 30, 45, 60).forEach { s ->
-                            SuggestionChip(
-                                onClick = { restBetweenRoundsText = s.toString() },
-                                label = { Text("${s}s") }
-                            )
-                        }
-                    }
-                }
-            }
-
-            // Section 2: Exercise Sequence List
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "2. Exercise Sequence (${exercises.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                if (exerciseListError) {
-                    Text(
-                        text = "Add at least 1 exercise",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
-                    )
-                }
-            }
-
-            if (exercises.isEmpty()) {
-                Card(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.FitnessCenter,
-                            contentDescription = null,
-                            modifier = Modifier.size(48.dp),
-                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        Text(
-                            text = "No exercises in sequence yet",
+                            text = "Exercise Sequence (${exercises.size})",
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Tap '+ Add Exercise' below to configure your workout routine.",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+                        if (exerciseListError) {
+                            Text(
+                                text = "Add at least 1 exercise",
+                                color = MaterialTheme.colorScheme.error,
+                                style = MaterialTheme.typography.bodySmall
+                            )
+                        }
                     }
-                }
-            } else {
-                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    exercises.forEachIndexed { index, exercise ->
+
+                    if (exercises.isEmpty()) {
                         Card(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { editingExerciseIndex = index },
-                            shape = RoundedCornerShape(12.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                         ) {
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .padding(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
+                                    .padding(24.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
                             ) {
-                                // Top row: Number circle, Exercise Name & Timers
-                                Row(
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    modifier = Modifier.fillMaxWidth()
+                                Icon(
+                                    imageVector = Icons.Default.FitnessCenter,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(48.dp),
+                                    tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                                )
+                                Spacer(modifier = Modifier.height(8.dp))
+                                Text(
+                                    text = "No exercises in sequence yet",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold
+                                )
+                                Spacer(modifier = Modifier.height(4.dp))
+                                Text(
+                                    text = "Tap '+ Add Exercise' below to build your routine.",
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
+                    } else {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            exercises.forEachIndexed { index, exercise ->
+                                Card(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .clickable { editingExerciseIndex = index },
+                                    shape = RoundedCornerShape(12.dp),
+                                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
                                 ) {
-                                    Box(
+                                    Column(
                                         modifier = Modifier
-                                            .size(32.dp)
-                                            .clip(CircleShape)
-                                            .background(MaterialTheme.colorScheme.primary),
-                                        contentAlignment = Alignment.Center
+                                            .fillMaxWidth()
+                                            .padding(16.dp),
+                                        verticalArrangement = Arrangement.spacedBy(8.dp)
                                     ) {
-                                        Text(
-                                            text = "${index + 1}",
-                                            style = MaterialTheme.typography.labelLarge,
-                                            fontWeight = FontWeight.Bold,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-
-                                    Spacer(modifier = Modifier.width(12.dp))
-
-                                    Column(modifier = Modifier.weight(1f)) {
-                                        Text(
-                                            text = exercise.name,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold
-                                        )
-                                        val isLastInList = index == exercises.lastIndex
-                                        Text(
-                                            text = if (isLastInList) {
-                                                "Work: ${exercise.workSeconds}s  •  No Rest (End of Routine)"
-                                            } else {
-                                                "Work: ${exercise.workSeconds}s  •  Rest: ${exercise.restSeconds}s"
-                                            },
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-
-                                // Bottom row: Individual exercise action buttons on a separate line
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.End,
-                                    verticalAlignment = Alignment.CenterVertically
-                                ) {
-                                    IconButton(onClick = { editingExerciseIndex = index }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Edit,
-                                            contentDescription = "Edit exercise",
-                                            tint = MaterialTheme.colorScheme.primary
-                                        )
-                                    }
-
-                                    IconButton(
-                                        onClick = {
-                                            if (index > 0) {
-                                                val item = exercises.removeAt(index)
-                                                exercises.add(index - 1, item)
+                                        // Top row: Number circle, Exercise Name & Timers
+                                        Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            modifier = Modifier.fillMaxWidth()
+                                        ) {
+                                            Box(
+                                                modifier = Modifier
+                                                    .size(32.dp)
+                                                    .clip(CircleShape)
+                                                    .background(MaterialTheme.colorScheme.primary),
+                                                contentAlignment = Alignment.Center
+                                            ) {
+                                                Text(
+                                                    text = "${index + 1}",
+                                                    style = MaterialTheme.typography.labelLarge,
+                                                    fontWeight = FontWeight.Bold,
+                                                    color = MaterialTheme.colorScheme.onPrimary
+                                                )
                                             }
-                                        },
-                                        enabled = index > 0
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowUpward,
-                                            contentDescription = "Move exercise up"
-                                        )
-                                    }
 
-                                    IconButton(
-                                        onClick = {
-                                            if (index < exercises.lastIndex) {
-                                                val item = exercises.removeAt(index)
-                                                exercises.add(index + 1, item)
+                                            Spacer(modifier = Modifier.width(12.dp))
+
+                                            Column(modifier = Modifier.weight(1f)) {
+                                                Text(
+                                                    text = exercise.name,
+                                                    style = MaterialTheme.typography.titleMedium,
+                                                    fontWeight = FontWeight.SemiBold
+                                                )
+                                                val isLastInList = index == exercises.lastIndex
+                                                Text(
+                                                    text = if (isLastInList) {
+                                                        "Work: ${exercise.workSeconds}s  •  No Rest (End of Routine)"
+                                                    } else {
+                                                        "Work: ${exercise.workSeconds}s  •  Rest: ${exercise.restSeconds}s"
+                                                    },
+                                                    style = MaterialTheme.typography.bodySmall,
+                                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                                )
                                             }
-                                        },
-                                        enabled = index < exercises.lastIndex
-                                    ) {
-                                        Icon(
-                                            imageVector = Icons.Default.ArrowDownward,
-                                            contentDescription = "Move exercise down"
-                                        )
-                                    }
+                                        }
 
-                                    IconButton(onClick = { exercises.removeAt(index) }) {
-                                        Icon(
-                                            imageVector = Icons.Default.Close,
-                                            contentDescription = "Remove exercise",
-                                            tint = MaterialTheme.colorScheme.error
-                                        )
+                                        // Bottom row: Individual exercise action buttons on a separate line
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.End,
+                                            verticalAlignment = Alignment.CenterVertically
+                                        ) {
+                                            IconButton(onClick = { editingExerciseIndex = index }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Edit,
+                                                    contentDescription = "Edit exercise",
+                                                    tint = MaterialTheme.colorScheme.primary
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    if (index > 0) {
+                                                        val item = exercises.removeAt(index)
+                                                        exercises.add(index - 1, item)
+                                                    }
+                                                },
+                                                enabled = index > 0
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowUpward,
+                                                    contentDescription = "Move exercise up"
+                                                )
+                                            }
+
+                                            IconButton(
+                                                onClick = {
+                                                    if (index < exercises.lastIndex) {
+                                                        val item = exercises.removeAt(index)
+                                                        exercises.add(index + 1, item)
+                                                    }
+                                                },
+                                                enabled = index < exercises.lastIndex
+                                            ) {
+                                                Icon(
+                                                    imageVector = Icons.Default.ArrowDownward,
+                                                    contentDescription = "Move exercise down"
+                                                )
+                                            }
+
+                                            IconButton(onClick = { exercises.removeAt(index) }) {
+                                                Icon(
+                                                    imageVector = Icons.Default.Close,
+                                                    contentDescription = "Remove exercise",
+                                                    tint = MaterialTheme.colorScheme.error
+                                                )
+                                            }
+                                        }
                                     }
                                 }
                             }
                         }
                     }
+
+                    // Full-width Add Exercise Button occupying entire line
+                    FilledTonalButton(
+                        onClick = { showAddExerciseDialog = true },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "Add Exercise",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold
+                        )
+                    }
                 }
             }
+        }
+    }
+}
 
-            // Full-width Add Exercise Button occupying entire line
-            FilledTonalButton(
-                onClick = { showAddExerciseDialog = true },
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Add,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
-                Spacer(modifier = Modifier.width(8.dp))
+@Composable
+private fun LiveSummaryBanner(
+    durationText: String,
+    rounds: Int,
+    exerciseCount: Int,
+    modifier: Modifier = Modifier
+) {
+    Card(
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.6f))
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column {
                 Text(
-                    text = "Add Exercise",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
+                    text = "Estimated Duration",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = durationText,
+                    style = MaterialTheme.typography.headlineMedium,
+                    fontWeight = FontWeight.Black,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
+
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "$rounds Rounds",
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+                Text(
+                    text = "$exerciseCount Exercises",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             }
         }
