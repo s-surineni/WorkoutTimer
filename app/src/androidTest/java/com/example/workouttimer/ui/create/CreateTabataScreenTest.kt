@@ -7,8 +7,11 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performTextClearance
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
+import junit.framework.TestCase.assertEquals
+import junit.framework.TestCase.assertNotNull
 import junit.framework.TestCase.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -31,7 +34,7 @@ class CreateTabataScreenTest {
     composeTestRule.onNodeWithText("Create Tabata Workout").assertExists()
     composeTestRule.onNodeWithText("1. Workout Details").assertExists()
     composeTestRule.onNodeWithText("Add Exercise").performScrollTo().assertExists()
-    composeTestRule.onNodeWithText("Save Tabata Workout").assertExists()
+    composeTestRule.onNodeWithText("Save").assertExists()
     composeTestRule.onNodeWithContentDescription("Navigate back").assertExists()
   }
 
@@ -55,7 +58,7 @@ class CreateTabataScreenTest {
     }
 
     composeTestRule.onNodeWithText("Edit Tabata Workout").assertExists()
-    composeTestRule.onNodeWithText("Update Tabata Workout").assertExists()
+    composeTestRule.onNodeWithText("Save").assertExists()
     composeTestRule.onAllNodesWithText("Burpees")[0].performScrollTo().assertExists()
     composeTestRule.onAllNodesWithContentDescription("Move exercise down")[0].performScrollTo().assertExists()
     composeTestRule.onAllNodesWithContentDescription("Move exercise up")[1].performScrollTo().assertExists()
@@ -141,16 +144,48 @@ class CreateTabataScreenTest {
   }
 
   @Test
-  fun createTabataScreen_navigateBackTriggered() {
-    var backTriggered = false
+  fun createTabataScreen_navigateBack_autoSavesWhenFieldsAreFilled() {
+    var savedWorkout: Workout? = null
+    val sample = Workout(
+      title = "Routine To Save",
+      rounds = 3,
+      exercises = listOf(
+        Exercise(name = "Burpees", workSeconds = 30, restSeconds = 15)
+      )
+    )
+
     composeTestRule.setContent {
       CreateTabataScreen(
-        onNavigateBack = { backTriggered = true },
-        onSaveWorkout = {}
+        initialWorkout = sample,
+        onNavigateBack = {},
+        onSaveWorkout = { savedWorkout = it }
       )
     }
 
+    // Press Back Arrow
     composeTestRule.onNodeWithContentDescription("Navigate back").performClick()
+
+    assertNotNull(savedWorkout)
+    assertEquals("Routine To Save", savedWorkout?.title)
+    assertEquals(3, savedWorkout?.rounds)
+  }
+
+  @Test
+  fun createTabataScreen_navigateBack_navigatesBackWhenFieldsAreInvalid() {
+    var backTriggered = false
+    var savedWorkout: Workout? = null
+
+    composeTestRule.setContent {
+      CreateTabataScreen(
+        onNavigateBack = { backTriggered = true },
+        onSaveWorkout = { savedWorkout = it }
+      )
+    }
+
+    // Empty title by default in create mode -> should not save, should navigate back
+    composeTestRule.onNodeWithContentDescription("Navigate back").performClick()
+
     assertTrue(backTriggered)
+    assertEquals(null, savedWorkout)
   }
 }

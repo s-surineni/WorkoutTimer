@@ -1,5 +1,6 @@
 package com.example.workouttimer.ui.create
 
+import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -29,7 +30,6 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,7 +41,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SuggestionChip
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -69,6 +68,7 @@ import com.example.workouttimer.ui.components.AddEditExerciseDialog
 
 /**
  * Full-page screen to create a new Tabata routine or edit an existing one.
+ * Includes auto-saving on back navigation when all required fields are filled.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
@@ -149,33 +149,53 @@ fun CreateTabataScreen(
         }
     }
 
-    fun validateAndSave() {
+    fun buildWorkoutIfValid(): Workout? {
         val trimmedTitle = title.trim()
         val isTitleValid = trimmedTitle.isNotEmpty()
         val hasExercises = exercises.isNotEmpty()
 
-        titleError = !isTitleValid
-        exerciseListError = !hasExercises
+        if (!isTitleValid || !hasExercises) return null
 
-        if (isTitleValid && hasExercises) {
-            val restBetweenRounds = restBetweenRoundsText.toIntOrNull() ?: 30
-            val workout = if (initialWorkout != null) {
-                initialWorkout.copy(
-                    title = trimmedTitle,
-                    rounds = rounds,
-                    restBetweenRoundsSeconds = restBetweenRounds,
-                    exercises = exercises.toList()
-                )
-            } else {
-                Workout(
-                    title = trimmedTitle,
-                    rounds = rounds,
-                    restBetweenRoundsSeconds = restBetweenRounds,
-                    exercises = exercises.toList()
-                )
-            }
-            onSaveWorkout(workout)
+        val restBetweenRounds = restBetweenRoundsText.toIntOrNull() ?: 30
+        return if (initialWorkout != null) {
+            initialWorkout.copy(
+                title = trimmedTitle,
+                rounds = rounds,
+                restBetweenRoundsSeconds = restBetweenRounds,
+                exercises = exercises.toList()
+            )
+        } else {
+            Workout(
+                title = trimmedTitle,
+                rounds = rounds,
+                restBetweenRoundsSeconds = restBetweenRounds,
+                exercises = exercises.toList()
+            )
         }
+    }
+
+    fun validateAndSave() {
+        val workout = buildWorkoutIfValid()
+        if (workout != null) {
+            onSaveWorkout(workout)
+        } else {
+            titleError = title.trim().isEmpty()
+            exerciseListError = exercises.isEmpty()
+        }
+    }
+
+    fun handleBackNavigation() {
+        val workout = buildWorkoutIfValid()
+        if (workout != null) {
+            onSaveWorkout(workout)
+        } else {
+            onNavigateBack()
+        }
+    }
+
+    // Intercept back gestures to auto-save if all fields are filled
+    BackHandler(enabled = true) {
+        handleBackNavigation()
     }
 
     Scaffold(
@@ -184,7 +204,7 @@ fun CreateTabataScreen(
             TopAppBar(
                 title = { Text(if (isEditMode) "Edit Tabata Workout" else "Create Tabata Workout") },
                 navigationIcon = {
-                    IconButton(onClick = onNavigateBack) {
+                    IconButton(onClick = { handleBackNavigation() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                             contentDescription = "Navigate back"
@@ -195,7 +215,7 @@ fun CreateTabataScreen(
                     TextButton(onClick = { validateAndSave() }) {
                         Text(
                             text = "Save",
-                            style = MaterialTheme.typography.labelLarge,
+                            style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -206,30 +226,6 @@ fun CreateTabataScreen(
                     titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
                 )
             )
-        },
-        bottomBar = {
-            Surface(
-                shadowElevation = 8.dp,
-                color = MaterialTheme.colorScheme.surface
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp)
-                ) {
-                    Button(
-                        onClick = { validateAndSave() },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(imageVector = Icons.Default.FitnessCenter, contentDescription = null)
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = if (isEditMode) "Update Tabata Workout" else "Save Tabata Workout",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                }
-            }
         }
     ) { innerPadding ->
         Column(
@@ -434,7 +430,7 @@ fun CreateTabataScreen(
                         )
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
-                            text = "Tap '+ Add Exercise' above to configure your workout routine.",
+                            text = "Tap '+ Add Exercise' below to configure your workout routine.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
