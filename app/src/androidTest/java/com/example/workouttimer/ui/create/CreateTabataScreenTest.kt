@@ -6,6 +6,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
 import junit.framework.TestCase.assertTrue
@@ -29,6 +30,7 @@ class CreateTabataScreenTest {
 
     composeTestRule.onNodeWithText("Create Tabata Workout").assertExists()
     composeTestRule.onNodeWithText("1. Workout Details").assertExists()
+    composeTestRule.onNodeWithText("Add Exercise").performScrollTo().assertExists()
     composeTestRule.onNodeWithText("Save Tabata Workout").assertExists()
     composeTestRule.onNodeWithContentDescription("Navigate back").assertExists()
   }
@@ -54,9 +56,9 @@ class CreateTabataScreenTest {
 
     composeTestRule.onNodeWithText("Edit Tabata Workout").assertExists()
     composeTestRule.onNodeWithText("Update Tabata Workout").assertExists()
-    composeTestRule.onAllNodesWithText("Burpees")[0].assertExists()
-    composeTestRule.onAllNodesWithContentDescription("Move exercise down")[0].assertExists()
-    composeTestRule.onAllNodesWithContentDescription("Move exercise up")[1].assertExists()
+    composeTestRule.onAllNodesWithText("Burpees")[0].performScrollTo().assertExists()
+    composeTestRule.onAllNodesWithContentDescription("Move exercise down")[0].performScrollTo().assertExists()
+    composeTestRule.onAllNodesWithContentDescription("Move exercise up")[1].performScrollTo().assertExists()
   }
 
   @Test
@@ -79,9 +81,63 @@ class CreateTabataScreenTest {
     }
 
     // Move first exercise down
-    composeTestRule.onAllNodesWithContentDescription("Move exercise down")[0].performClick()
-    composeTestRule.onNodeWithText("Second Exercise").assertExists()
-    composeTestRule.onNodeWithText("First Exercise").assertExists()
+    composeTestRule.onAllNodesWithContentDescription("Move exercise down")[0].performScrollTo().performClick()
+    composeTestRule.onNodeWithText("Second Exercise").performScrollTo().assertExists()
+    composeTestRule.onNodeWithText("First Exercise").performScrollTo().assertExists()
+  }
+
+  @Test
+  fun createTabataScreen_addExerciseDialog_addsNewExerciseToList() {
+    composeTestRule.setContent {
+      CreateTabataScreen(
+        onNavigateBack = {},
+        onSaveWorkout = {}
+      )
+    }
+
+    // Click "+ Add Exercise"
+    composeTestRule.onNodeWithText("Add Exercise").performScrollTo().performClick()
+
+    // Dialog elements exist
+    composeTestRule.onNodeWithText("Add to Routine").assertExists()
+    composeTestRule.onNodeWithText("Burpees").performClick()
+    composeTestRule.onNodeWithText("45s").performClick()
+
+    // Confirm add in dialog
+    composeTestRule.onNodeWithText("Add to Routine").performClick()
+
+    // Exercise now in sequence list
+    composeTestRule.onAllNodesWithText("Burpees")[0].performScrollTo().assertExists()
+  }
+
+  @Test
+  fun createTabataScreen_editExerciseDialog_updatesExercise() {
+    val sample = Workout(
+      title = "Custom Routine",
+      rounds = 2,
+      exercises = listOf(
+        Exercise(name = "Old Name", workSeconds = 20, restSeconds = 10)
+      )
+    )
+
+    composeTestRule.setContent {
+      CreateTabataScreen(
+        initialWorkout = sample,
+        onNavigateBack = {},
+        onSaveWorkout = {}
+      )
+    }
+
+    // Click Edit icon on first exercise
+    composeTestRule.onNodeWithContentDescription("Edit exercise").performScrollTo().performClick()
+    composeTestRule.onNodeWithText("Edit Exercise").assertExists()
+
+    // Change name
+    composeTestRule.onNodeWithText("Squats").performClick()
+    composeTestRule.onNodeWithText("Save Changes").performClick()
+
+    // Updated exercise is displayed
+    composeTestRule.onAllNodesWithText("Squats")[0].performScrollTo().assertExists()
   }
 
   @Test

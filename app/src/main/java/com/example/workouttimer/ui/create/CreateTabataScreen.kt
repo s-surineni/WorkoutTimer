@@ -1,13 +1,12 @@
 package com.example.workouttimer.ui.create
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -27,13 +26,13 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDownward
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.Close
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -65,6 +64,7 @@ import androidx.compose.ui.unit.dp
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
+import com.example.workouttimer.ui.components.AddEditExerciseDialog
 
 /**
  * Full-page screen to create a new Tabata routine or edit an existing one.
@@ -98,15 +98,34 @@ fun CreateTabataScreen(
         }
     }
 
-    var newExerciseName by remember { mutableStateOf("") }
-    var newWorkSecondsText by remember { mutableStateOf("20") }
-    var newRestSecondsText by remember { mutableStateOf("10") }
     var exerciseListError by remember { mutableStateOf(false) }
-    var addExerciseInputError by remember { mutableStateOf(false) }
+    var showAddExerciseDialog by remember { mutableStateOf(false) }
+    var editingExerciseIndex by remember { mutableStateOf<Int?>(null) }
 
-    val quickExerciseSuggestions = listOf(
-        "Squats", "Burpees", "Plank", "Mountain Climbers", "High Knees", "Lunges", "Crunches", "Jumping Jacks", "Push Ups"
-    )
+    // Dialog for adding a new exercise
+    if (showAddExerciseDialog) {
+        AddEditExerciseDialog(
+            onDismiss = { showAddExerciseDialog = false },
+            onSaveExercise = { newExercise ->
+                exercises.add(newExercise)
+                exerciseListError = false
+            }
+        )
+    }
+
+    // Dialog for editing an existing exercise
+    editingExerciseIndex?.let { index ->
+        if (index in exercises.indices) {
+            AddEditExerciseDialog(
+                initialExercise = exercises[index],
+                onDismiss = { editingExerciseIndex = null },
+                onSaveExercise = { updatedExercise ->
+                    exercises[index] = updatedExercise
+                    editingExerciseIndex = null
+                }
+            )
+        }
+    }
 
     val currentTotalDurationSeconds by remember {
         derivedStateOf {
@@ -347,7 +366,7 @@ fun CreateTabataScreen(
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(
                             keyboardType = KeyboardType.Number,
-                            imeAction = ImeAction.Next
+                            imeAction = ImeAction.Done
                         ),
                         modifier = Modifier.fillMaxWidth()
                     )
@@ -372,36 +391,65 @@ fun CreateTabataScreen(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Text(
-                    text = "2. Exercise Sequence (${exercises.size})",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-                )
-
-                if (exerciseListError) {
+                Column {
                     Text(
-                        text = "Add at least 1 exercise",
-                        color = MaterialTheme.colorScheme.error,
-                        style = MaterialTheme.typography.bodySmall
+                        text = "2. Exercise Sequence (${exercises.size})",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
                     )
+
+                    if (exerciseListError) {
+                        Text(
+                            text = "Add at least 1 exercise",
+                            color = MaterialTheme.colorScheme.error,
+                            style = MaterialTheme.typography.bodySmall
+                        )
+                    }
+                }
+
+                Button(
+                    onClick = { showAddExerciseDialog = true }
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Add,
+                        contentDescription = null,
+                        modifier = Modifier.size(18.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text("Add Exercise")
                 }
             }
 
             if (exercises.isEmpty()) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.3f))
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f))
                 ) {
-                    Box(
+                    Column(
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(24.dp),
-                        contentAlignment = Alignment.Center
+                        horizontalAlignment = Alignment.CenterHorizontally,
+                        verticalArrangement = Arrangement.Center
                     ) {
+                        Icon(
+                            imageVector = Icons.Default.FitnessCenter,
+                            contentDescription = null,
+                            modifier = Modifier.size(48.dp),
+                            tint = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = "No exercises in sequence yet. Use the form below to add exercises.",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
+                            text = "No exercises in sequence yet",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Tap '+ Add Exercise' above to configure your workout routine.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                 }
@@ -409,7 +457,9 @@ fun CreateTabataScreen(
                 Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     exercises.forEachIndexed { index, exercise ->
                         Card(
-                            modifier = Modifier.fillMaxWidth(),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { editingExerciseIndex = index },
                             shape = RoundedCornerShape(12.dp),
                             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f))
                         ) {
@@ -461,6 +511,14 @@ fun CreateTabataScreen(
                                 }
 
                                 Row(verticalAlignment = Alignment.CenterVertically) {
+                                    IconButton(onClick = { editingExerciseIndex = index }) {
+                                        Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = "Edit exercise",
+                                            tint = MaterialTheme.colorScheme.primary
+                                        )
+                                    }
+
                                     IconButton(
                                         onClick = {
                                             if (index > 0) {
@@ -504,160 +562,15 @@ fun CreateTabataScreen(
                     }
                 }
             }
-
-            // Section 3: Add Exercise Form
-            Card(
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.25f))
-            ) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
-                ) {
-                    Text(
-                        text = "3. Add Exercise to Sequence",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.Bold
-                    )
-
-                    OutlinedTextField(
-                        value = newExerciseName,
-                        onValueChange = {
-                            newExerciseName = it
-                            if (addExerciseInputError && it.isNotBlank()) addExerciseInputError = false
-                        },
-                        label = { Text("Exercise Name") },
-                        placeholder = { Text("e.g., Mountain Climbers") },
-                        isError = addExerciseInputError,
-                        supportingText = if (addExerciseInputError) {
-                            { Text("Exercise name cannot be empty") }
-                        } else null,
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
-                        modifier = Modifier.fillMaxWidth()
-                    )
-
-                    // Suggestion chips
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        quickExerciseSuggestions.forEach { suggestion ->
-                            SuggestionChip(
-                                onClick = {
-                                    newExerciseName = suggestion
-                                    addExerciseInputError = false
-                                },
-                                label = { Text(suggestion, style = MaterialTheme.typography.bodySmall) }
-                            )
-                        }
-                    }
-
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = newWorkSecondsText,
-                            onValueChange = { newWorkSecondsText = it.filter { c -> c.isDigit() } },
-                            label = { Text("Work Duration") },
-                            suffix = { Text("s") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Next
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-
-                        OutlinedTextField(
-                            value = newRestSecondsText,
-                            onValueChange = { newRestSecondsText = it.filter { c -> c.isDigit() } },
-                            label = { Text("Rest Duration") },
-                            suffix = { Text("s") },
-                            singleLine = true,
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            modifier = Modifier.weight(1f)
-                        )
-                    }
-
-                    // Duration interval preset chips
-                    FlowRow(
-                        horizontalArrangement = Arrangement.spacedBy(6.dp),
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        listOf(
-                            Pair(20, 10),
-                            Pair(30, 15),
-                            Pair(40, 20),
-                            Pair(45, 15),
-                            Pair(60, 20)
-                        ).forEach { (work, rest) ->
-                            SuggestionChip(
-                                onClick = {
-                                    newWorkSecondsText = work.toString()
-                                    newRestSecondsText = rest.toString()
-                                },
-                                label = { Text("${work}s Work / ${rest}s Rest", style = MaterialTheme.typography.bodySmall) }
-                            )
-                        }
-                    }
-
-                    FilledTonalButton(
-                        onClick = {
-                            val trimmed = newExerciseName.trim()
-                            val workSec = newWorkSecondsText.toIntOrNull() ?: 20
-                            val restSec = newRestSecondsText.toIntOrNull() ?: 10
-                            if (trimmed.isEmpty()) {
-                                addExerciseInputError = true
-                            } else if (workSec > 0) {
-                                exercises.add(Exercise(name = trimmed, workSeconds = workSec, restSeconds = restSec))
-                                newExerciseName = ""
-                                addExerciseInputError = false
-                                exerciseListError = false
-                            }
-                        },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Icon(imageVector = Icons.Default.Add, contentDescription = null)
-                        Spacer(modifier = Modifier.width(4.dp))
-                        Text("Add Exercise to Sequence")
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(32.dp))
         }
     }
 }
 
 @Preview(showBackground = true)
 @Composable
-private fun CreateTabataScreenPreview() {
+fun CreateTabataScreenPreview() {
     WorkoutTimerTheme {
         CreateTabataScreen(
-            onNavigateBack = {},
-            onSaveWorkout = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-private fun EditTabataScreenPreview() {
-    WorkoutTimerTheme {
-        CreateTabataScreen(
-            initialWorkout = Workout(
-                title = "Core HIIT",
-                rounds = 3,
-                restBetweenRoundsSeconds = 30,
-                exercises = listOf(Exercise(name = "Plank", workSeconds = 30, restSeconds = 15))
-            ),
             onNavigateBack = {},
             onSaveWorkout = {}
         )

@@ -200,7 +200,6 @@ fun TabataRoutineCard(
                 ) {
                     Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Start Tabata")
                     Text("Start")
                 }
             }
