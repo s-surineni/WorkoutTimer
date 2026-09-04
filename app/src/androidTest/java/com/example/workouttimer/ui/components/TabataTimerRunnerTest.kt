@@ -21,6 +21,8 @@ class TabataTimerRunnerTest {
         title = "HIIT Sprint",
         rounds = 2,
         restBetweenRoundsSeconds = 30,
+        warmupSeconds = 30,
+        cooldownSeconds = 30,
         exercises = listOf(
             Exercise(name = "High Knees", workSeconds = 20, restSeconds = 10),
             Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10)
@@ -39,10 +41,28 @@ class TabataTimerRunnerTest {
 
         composeTestRule.onNodeWithText("HIIT Sprint").assertExists()
         composeTestRule.onNodeWithText("GET READY").assertExists()
-        composeTestRule.onNodeWithText("High Knees").assertExists()
+        composeTestRule.onNodeWithText("Up Next: Warm-Up (30s)").assertExists()
         composeTestRule.onNodeWithContentDescription("Lock Screen").assertExists()
         composeTestRule.onNodeWithContentDescription("Mute Sound").assertExists()
         composeTestRule.onNodeWithContentDescription("Close Timer").assertExists()
+    }
+
+    @Test
+    fun tabataTimerRunner_transitionsToWarmupPhase() {
+        composeTestRule.setContent {
+            TabataTimerRunner(
+                workout = sampleWorkout,
+                onDismiss = {},
+                audioFeedbackManager = NoOpAudioFeedbackManager()
+            )
+        }
+
+        // Skip GET READY -> Moves to WARM-UP
+        composeTestRule.onNodeWithContentDescription("Skip Exercise").performClick()
+
+        composeTestRule.onNodeWithText("WARM-UP").assertExists()
+        composeTestRule.onNodeWithText("Warm-Up & Mobilize").assertExists()
+        composeTestRule.onNodeWithText("Up Next: Round 1 • High Knees").assertExists()
     }
 
     @Test

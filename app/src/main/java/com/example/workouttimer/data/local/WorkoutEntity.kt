@@ -15,14 +15,18 @@ data class WorkoutEntity(
     val title: String,
     val rounds: Int,
     val restBetweenRoundsSeconds: Int,
-    val exercises: List<Exercise>
+    val exercises: List<Exercise>,
+    val warmupSeconds: Int = 0,
+    val cooldownSeconds: Int = 0
 ) {
     fun toDomain(): Workout = Workout(
         id = id,
         title = title,
         rounds = rounds,
         restBetweenRoundsSeconds = restBetweenRoundsSeconds,
-        exercises = exercises
+        exercises = exercises,
+        warmupSeconds = warmupSeconds,
+        cooldownSeconds = cooldownSeconds
     )
 }
 
@@ -31,5 +35,7 @@ fun Workout.toEntity(): WorkoutEntity = WorkoutEntity(
     title = title,
     rounds = rounds,
     restBetweenRoundsSeconds = restBetweenRoundsSeconds,
-    exercises = exercises
+    exercises = exercises,
+    warmupSeconds = warmupSeconds,
+    cooldownSeconds = cooldownSeconds
 )

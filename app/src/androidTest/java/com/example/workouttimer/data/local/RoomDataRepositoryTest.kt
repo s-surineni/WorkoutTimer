@@ -7,7 +7,6 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.RoomDataRepository
 import com.example.workouttimer.data.Workout
-import com.example.workouttimer.data.WorkoutHistoryRecord
 import junit.framework.TestCase.assertEquals
 import junit.framework.TestCase.assertTrue
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -27,7 +26,6 @@ class RoomDataRepositoryTest {
 
     private lateinit var database: AppDatabase
     private lateinit var workoutDao: WorkoutDao
-    private lateinit var workoutHistoryDao: WorkoutHistoryDao
     private val testDispatcher = StandardTestDispatcher()
     private val testScope = TestScope(testDispatcher)
     private lateinit var repository: RoomDataRepository
@@ -39,10 +37,8 @@ class RoomDataRepositoryTest {
             .allowMainThreadQueries()
             .build()
         workoutDao = database.workoutDao()
-        workoutHistoryDao = database.workoutHistoryDao()
         repository = RoomDataRepository(
             workoutDao = workoutDao,
-            workoutHistoryDao = workoutHistoryDao,
             ioDispatcher = testDispatcher,
             coroutineScope = testScope
         )
@@ -54,12 +50,14 @@ class RoomDataRepositoryTest {
     }
 
     @Test
-    fun insertAndRetrieveWorkout() = testScope.runTest {
+    fun insertAndRetrieveWorkout_withWarmupAndCooldown() = testScope.runTest {
         val workout = Workout(
             id = "test_1",
             title = "Morning Tabata",
             rounds = 3,
             restBetweenRoundsSeconds = 30,
+            warmupSeconds = 45,
+            cooldownSeconds = 60,
             exercises = listOf(
                 Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
                 Exercise(name = "Squats", workSeconds = 20, restSeconds = 10)
@@ -74,6 +72,8 @@ class RoomDataRepositoryTest {
         val loaded = list.first()
         assertEquals("Morning Tabata", loaded.title)
         assertEquals(3, loaded.rounds)
+        assertEquals(45, loaded.warmupSeconds)
+        assertEquals(60, loaded.cooldownSeconds)
         assertEquals(2, loaded.exercises.size)
         assertEquals("Push Ups", loaded.exercises[0].name)
     }
@@ -84,13 +84,20 @@ class RoomDataRepositoryTest {
             id = "test_2",
             title = "Original Title",
             rounds = 1,
+            warmupSeconds = 0,
+            cooldownSeconds = 0,
             exercises = listOf(Exercise(name = "Plank", workSeconds = 30, restSeconds = 10))
         )
 
         repository.addWorkout(workout)
         advanceUntilIdle()
 
-        val updated = workout.copy(title = "Edited Title", rounds = 4)
+        val updated = workout.copy(
+            title = "Edited Title",
+            rounds = 4,
+            warmupSeconds = 30,
+            cooldownSeconds = 30
+        )
         repository.updateWorkout(updated)
         advanceUntilIdle()
 
@@ -98,6 +105,8 @@ class RoomDataRepositoryTest {
         assertEquals(1, list.size)
         assertEquals("Edited Title", list.first().title)
         assertEquals(4, list.first().rounds)
+        assertEquals(30, list.first().warmupSeconds)
+        assertEquals(30, list.first().cooldownSeconds)
     }
 
     @Test
@@ -117,29 +126,5 @@ class RoomDataRepositoryTest {
         advanceUntilIdle()
 
         assertTrue(repository.workouts.first().isEmpty())
-    }
-
-    @Test
-    fun logAndClearWorkoutHistory() = testScope.runTest {
-        val historyRecord = WorkoutHistoryRecord(
-            workoutId = "w1",
-            workoutTitle = "Legs & Core Tabata",
-            totalDurationSeconds = 300,
-            roundsCompleted = 3,
-            totalExercises = 4
-        )
-
-        repository.logWorkoutCompletion(historyRecord)
-        advanceUntilIdle()
-
-        val historyList = repository.history.first()
-        assertEquals(1, historyList.size)
-        assertEquals("Legs & Core Tabata", historyList.first().workoutTitle)
-        assertEquals(300, historyList.first().totalDurationSeconds)
-
-        repository.clearHistory()
-        advanceUntilIdle()
-
-        assertTrue(repository.history.first().isEmpty())
     }
 }

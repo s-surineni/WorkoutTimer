@@ -1,7 +1,6 @@
 package com.example.workouttimer.data
 
 import com.example.workouttimer.data.local.WorkoutDao
-import com.example.workouttimer.data.local.WorkoutHistoryDao
 import com.example.workouttimer.data.local.toEntity
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
@@ -15,16 +14,11 @@ import kotlinx.coroutines.launch
  */
 class RoomDataRepository(
     private val workoutDao: WorkoutDao,
-    private val workoutHistoryDao: WorkoutHistoryDao,
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
     private val coroutineScope: CoroutineScope = CoroutineScope(ioDispatcher)
 ) : DataRepository {
 
     override val workouts: Flow<List<Workout>> = workoutDao.getAllWorkouts().map { entities ->
-        entities.map { it.toDomain() }
-    }
-
-    override val history: Flow<List<WorkoutHistoryRecord>> = workoutHistoryDao.getAllHistory().map { entities ->
         entities.map { it.toDomain() }
     }
 
@@ -43,18 +37,6 @@ class RoomDataRepository(
     override fun removeWorkout(id: String) {
         coroutineScope.launch(ioDispatcher) {
             workoutDao.deleteWorkoutById(id)
-        }
-    }
-
-    override fun logWorkoutCompletion(record: WorkoutHistoryRecord) {
-        coroutineScope.launch(ioDispatcher) {
-            workoutHistoryDao.insertHistoryRecord(record.toEntity())
-        }
-    }
-
-    override fun clearHistory() {
-        coroutineScope.launch(ioDispatcher) {
-            workoutHistoryDao.clearAllHistory()
         }
     }
 }

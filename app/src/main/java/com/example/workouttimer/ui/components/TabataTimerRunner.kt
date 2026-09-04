@@ -83,16 +83,18 @@ import kotlinx.coroutines.delay
 
 enum class TabataPhase {
     PREPARE,
+    WARMUP,
     WORK,
     REST,
     ROUND_REST,
+    COOLDOWN,
     COMPLETED
 }
 
 /**
  * Full interactive Tabata Workout Timer Runner with distinct, high-contrast colors
- * for Work and Rest intervals, immersive full-screen display (hiding navigation & status bars),
- * accidental touch locking, audio feedback cues, and round transitions.
+ * for Warm-Up, Work, Rest, Round Rest, and Cool-Down intervals, immersive full-screen display
+ * (hiding navigation & status bars), accidental touch locking, audio feedback cues, and round transitions.
  */
 @Composable
 fun TabataTimerRunner(
@@ -140,9 +142,11 @@ fun TabataTimerRunner(
     val totalPhaseDuration = remember(phase, currentExerciseIndex, currentRound) {
         when (phase) {
             TabataPhase.PREPARE -> 3
+            TabataPhase.WARMUP -> workout.warmupSeconds.coerceAtLeast(1)
             TabataPhase.WORK -> currentExercise.workSeconds.coerceAtLeast(1)
             TabataPhase.REST -> currentExercise.restSeconds.coerceAtLeast(1)
             TabataPhase.ROUND_REST -> workout.restBetweenRoundsSeconds.coerceAtLeast(1)
+            TabataPhase.COOLDOWN -> workout.cooldownSeconds.coerceAtLeast(1)
             TabataPhase.COMPLETED -> 1
         }
     }
@@ -150,8 +154,8 @@ fun TabataTimerRunner(
     fun playPhaseSound(targetPhase: TabataPhase) {
         if (!isSoundEnabled) return
         when (targetPhase) {
-            TabataPhase.WORK -> audioFeedbackManager.playWorkStart()
-            TabataPhase.REST, TabataPhase.ROUND_REST -> audioFeedbackManager.playRestStart()
+            TabataPhase.WARMUP, TabataPhase.WORK -> audioFeedbackManager.playWorkStart()
+            TabataPhase.REST, TabataPhase.ROUND_REST, TabataPhase.COOLDOWN -> audioFeedbackManager.playRestStart()
             TabataPhase.COMPLETED -> audioFeedbackManager.playWorkoutComplete()
             TabataPhase.PREPARE -> {}
         }
@@ -161,8 +165,19 @@ fun TabataTimerRunner(
     fun moveToNext() {
         when (phase) {
             TabataPhase.PREPARE -> {
+                if (workout.warmupSeconds > 0) {
+                    phase = TabataPhase.WARMUP
+                    timeLeft = workout.warmupSeconds
+                    playPhaseSound(TabataPhase.WARMUP)
+                } else {
+                    phase = TabataPhase.WORK
+                    timeLeft = currentExercise.workSeconds
+                    playPhaseSound(TabataPhase.WORK)
+                }
+            }
+            TabataPhase.WARMUP -> {
                 phase = TabataPhase.WORK
-                timeLeft = currentExercise.workSeconds
+                timeLeft = workout.exercises[0].workSeconds
                 playPhaseSound(TabataPhase.WORK)
             }
             TabataPhase.WORK -> {
@@ -188,6 +203,10 @@ fun TabataTimerRunner(
                         timeLeft = workout.exercises[0].workSeconds
                         playPhaseSound(TabataPhase.WORK)
                     }
+                } else if (workout.cooldownSeconds > 0) {
+                    phase = TabataPhase.COOLDOWN
+                    timeLeft = workout.cooldownSeconds
+                    playPhaseSound(TabataPhase.COOLDOWN)
                 } else {
                     phase = TabataPhase.COMPLETED
                     isScreenLocked = false
@@ -208,6 +227,12 @@ fun TabataTimerRunner(
                 timeLeft = workout.exercises[0].workSeconds
                 playPhaseSound(TabataPhase.WORK)
             }
+            TabataPhase.COOLDOWN -> {
+                phase = TabataPhase.COMPLETED
+                isScreenLocked = false
+                playPhaseSound(TabataPhase.COMPLETED)
+                onWorkoutComplete?.invoke(workout, workout.totalDurationSeconds)
+            }
             TabataPhase.COMPLETED -> {}
         }
     }
@@ -216,6 +241,10 @@ fun TabataTimerRunner(
     fun moveToPrevious() {
         when (phase) {
             TabataPhase.PREPARE -> {}
+            TabataPhase.WARMUP -> {
+                phase = TabataPhase.PREPARE
+                timeLeft = 3
+            }
             TabataPhase.WORK -> {
                 if (currentExerciseIndex > 0) {
                     currentExerciseIndex -= 1
@@ -226,6 +255,9 @@ fun TabataTimerRunner(
                     currentExerciseIndex = workout.exercises.size - 1
                     phase = TabataPhase.WORK
                     timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+                } else if (workout.warmupSeconds > 0) {
+                    phase = TabataPhase.WARMUP
+                    timeLeft = workout.warmupSeconds
                 } else {
                     phase = TabataPhase.PREPARE
                     timeLeft = 3
@@ -240,11 +272,22 @@ fun TabataTimerRunner(
                 currentExerciseIndex = workout.exercises.size - 1
                 timeLeft = workout.exercises[currentExerciseIndex].workSeconds
             }
-            TabataPhase.COMPLETED -> {
+            TabataPhase.COOLDOWN -> {
                 phase = TabataPhase.WORK
                 currentRound = workout.rounds
                 currentExerciseIndex = workout.exercises.size - 1
                 timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+            }
+            TabataPhase.COMPLETED -> {
+                if (workout.cooldownSeconds > 0) {
+                    phase = TabataPhase.COOLDOWN
+                    timeLeft = workout.cooldownSeconds
+                } else {
+                    phase = TabataPhase.WORK
+                    currentRound = workout.rounds
+                    currentExerciseIndex = workout.exercises.size - 1
+                    timeLeft = workout.exercises[currentExerciseIndex].workSeconds
+                }
             }
         }
     }
@@ -262,13 +305,9 @@ fun TabataTimerRunner(
     LaunchedEffect(isRunning, phase, timeLeft) {
         if (!isRunning || phase == TabataPhase.COMPLETED) return@LaunchedEffect
 
-        // Play 3-2-1 beep during prepare countdown or last 3 seconds of work/rest
-        if (isSoundEnabled) {
-            if (phase == TabataPhase.PREPARE && timeLeft in 1..3) {
-                audioFeedbackManager.playCountdownTick()
-            } else if ((phase == TabataPhase.WORK || phase == TabataPhase.REST || phase == TabataPhase.ROUND_REST) && timeLeft in 1..3) {
-                audioFeedbackManager.playCountdownTick()
-            }
+        // Play 3-2-1 beep during countdown or last 3 seconds of any phase
+        if (isSoundEnabled && timeLeft in 1..3) {
+            audioFeedbackManager.playCountdownTick()
         }
 
         delay(1000L)
@@ -293,9 +332,11 @@ fun TabataTimerRunner(
     val phaseColor by animateColorAsState(
         targetValue = when (phase) {
             TabataPhase.PREPARE -> Color(0xFFE65100) // Deep Energetic Orange
+            TabataPhase.WARMUP -> Color(0xFFF57C00) // Warm Sunset Amber
             TabataPhase.WORK -> Color(0xFF1B5E20) // High-contrast Emerald Green
             TabataPhase.REST -> Color(0xFF0277BD) // Vibrant Ocean Blue
             TabataPhase.ROUND_REST -> Color(0xFF6A1B9A) // Royal Deep Purple
+            TabataPhase.COOLDOWN -> Color(0xFF00796B) // Cool Refreshing Teal
             TabataPhase.COMPLETED -> Color(0xFF2E7D32) // Satisfying Success Green
         },
         animationSpec = tween(durationMillis = 350),
@@ -305,9 +346,11 @@ fun TabataTimerRunner(
     val cardContainerColor by animateColorAsState(
         targetValue = when (phase) {
             TabataPhase.PREPARE -> Color(0xFFFFF3E0) // Light Warm Orange Container
+            TabataPhase.WARMUP -> Color(0xFFFFF8E1) // Light Warm Amber Container
             TabataPhase.WORK -> Color(0xFFE8F5E9) // Light Crisp Green Container
             TabataPhase.REST -> Color(0xFFE3F2FD) // Light Refreshing Blue Container
             TabataPhase.ROUND_REST -> Color(0xFFF3E5F5) // Light Lavender Container
+            TabataPhase.COOLDOWN -> Color(0xFFE0F2F1) // Light Teal Container
             TabataPhase.COMPLETED -> Color(0xFFE8F5E9) // Light Green Container
         },
         animationSpec = tween(durationMillis = 350),
@@ -317,9 +360,11 @@ fun TabataTimerRunner(
     val onCardColor by animateColorAsState(
         targetValue = when (phase) {
             TabataPhase.PREPARE -> Color(0xFF4E1D00)
+            TabataPhase.WARMUP -> Color(0xFF4E2C00)
             TabataPhase.WORK -> Color(0xFF0F3D17)
             TabataPhase.REST -> Color(0xFF0D3360)
             TabataPhase.ROUND_REST -> Color(0xFF380E54)
+            TabataPhase.COOLDOWN -> Color(0xFF003830)
             TabataPhase.COMPLETED -> Color(0xFF0F3D17)
         },
         animationSpec = tween(durationMillis = 350),
@@ -385,7 +430,12 @@ fun TabataTimerRunner(
                             fontWeight = FontWeight.Bold
                         )
                         Text(
-                            text = "Round $currentRound of ${workout.rounds} • Exercise ${currentExerciseIndex + 1} of ${workout.exercises.size}",
+                            text = when (phase) {
+                                TabataPhase.WARMUP -> "Warm-Up Phase • Getting Ready"
+                                TabataPhase.COOLDOWN -> "Cool-Down Phase • Recovery"
+                                TabataPhase.COMPLETED -> "Workout Finished"
+                                else -> "Round $currentRound of ${workout.rounds} • Exercise ${currentExerciseIndex + 1} of ${workout.exercises.size}"
+                            },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -420,7 +470,7 @@ fun TabataTimerRunner(
                     }
                 }
 
-                // Middle: Phase card & countdown clock with distinct Work/Rest color theme
+                // Middle: Phase card & countdown clock with distinct Work/Rest/Warmup/Cooldown color theme
                 Card(
                     modifier = Modifier
                         .fillMaxWidth()
@@ -444,9 +494,11 @@ fun TabataTimerRunner(
                             Text(
                                 text = when (phase) {
                                     TabataPhase.PREPARE -> "GET READY"
+                                    TabataPhase.WARMUP -> "WARM-UP"
                                     TabataPhase.WORK -> "WORK"
                                     TabataPhase.REST -> "REST"
                                     TabataPhase.ROUND_REST -> "ROUND REST"
+                                    TabataPhase.COOLDOWN -> "COOL-DOWN"
                                     TabataPhase.COMPLETED -> "FINISHED!"
                                 },
                                 style = MaterialTheme.typography.titleMedium,
@@ -457,7 +509,7 @@ fun TabataTimerRunner(
 
                         Spacer(modifier = Modifier.height(20.dp))
 
-                        // Exercise Name
+                        // Exercise Name / Phase Title
                         if (phase == TabataPhase.COMPLETED) {
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
@@ -475,7 +527,12 @@ fun TabataTimerRunner(
                             )
                         } else {
                             Text(
-                                text = if (phase == TabataPhase.ROUND_REST) "Catch Your Breath" else currentExercise.name,
+                                text = when (phase) {
+                                    TabataPhase.WARMUP -> "Warm-Up & Mobilize"
+                                    TabataPhase.ROUND_REST -> "Catch Your Breath"
+                                    TabataPhase.COOLDOWN -> "Cool-Down & Stretch"
+                                    else -> currentExercise.name
+                                },
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.ExtraBold,
                                 color = onCardColor,
@@ -514,6 +571,9 @@ fun TabataTimerRunner(
                         if (phase != TabataPhase.COMPLETED) {
                             val isLastExerciseInRound = currentExerciseIndex + 1 >= workout.exercises.size
                             val upNextText = when {
+                                phase == TabataPhase.PREPARE && workout.warmupSeconds > 0 -> "Up Next: Warm-Up (${workout.warmupSeconds}s)"
+                                phase == TabataPhase.PREPARE -> "Up Next: ${workout.exercises[0].name} (${workout.exercises[0].workSeconds}s)"
+                                phase == TabataPhase.WARMUP -> "Up Next: Round 1 • ${workout.exercises[0].name}"
                                 isLastExerciseInRound && currentRound < workout.rounds -> {
                                     if (workout.restBetweenRoundsSeconds > 0) {
                                         "Up Next: Round Rest (${workout.restBetweenRoundsSeconds}s)"
@@ -521,6 +581,7 @@ fun TabataTimerRunner(
                                         "Up Next: Round ${currentRound + 1} • ${workout.exercises[0].name}"
                                     }
                                 }
+                                isLastExerciseInRound && currentRound == workout.rounds && workout.cooldownSeconds > 0 -> "Up Next: Cool-Down (${workout.cooldownSeconds}s)"
                                 isLastExerciseInRound && currentRound == workout.rounds -> "Final Exercise!"
                                 nextExercise != null && phase == TabataPhase.WORK && currentExercise.restSeconds > 0 -> "Up Next: Rest (${currentExercise.restSeconds}s)"
                                 nextExercise != null -> "Up Next: ${nextExercise.name} (${nextExercise.workSeconds}s)"
@@ -658,6 +719,8 @@ private fun TabataTimerRunnerPreview() {
                 title = "Preview Tabata",
                 rounds = 2,
                 restBetweenRoundsSeconds = 30,
+                warmupSeconds = 30,
+                cooldownSeconds = 30,
                 exercises = listOf(
                     Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
                     Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10)

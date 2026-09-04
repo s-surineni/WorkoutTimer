@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 
 /**
  * Represents a full Tabata / HIIT workout routine consisting of multiple exercises,
- * configured rounds, and rest intervals.
+ * configured rounds, rest intervals, and optional warm-up and cool-down blocks.
  */
 @Immutable
 @Serializable
@@ -15,21 +15,24 @@ data class Workout(
     val title: String,
     val exercises: List<Exercise>,
     val rounds: Int = 1,
-    val restBetweenRoundsSeconds: Int = 30
+    val restBetweenRoundsSeconds: Int = 30,
+    val warmupSeconds: Int = 0,
+    val cooldownSeconds: Int = 0
 ) {
     /**
-     * Total duration of the workout in seconds, including all exercise work, rest,
-     * and rest periods between rounds. The rest interval after the final exercise
-     * in a routine is excluded.
+     * Total duration of the workout in seconds, including warm-up, all exercise work,
+     * rest, inter-round rest periods, and cool-down. The rest interval after the final
+     * exercise in a routine is excluded.
      */
     val totalDurationSeconds: Int
         get() {
+            if (exercises.isEmpty()) return warmupSeconds + cooldownSeconds
             val singleRoundWork = exercises.sumOf { it.workSeconds }
             val singleRoundRest = exercises.dropLast(1).sumOf { it.restSeconds }
             val singleRoundDuration = singleRoundWork + singleRoundRest
             val totalRoundsDuration = singleRoundDuration * rounds
             val interRoundRestDuration = (rounds - 1).coerceAtLeast(0) * restBetweenRoundsSeconds
-            return totalRoundsDuration + interRoundRestDuration
+            return warmupSeconds + totalRoundsDuration + interRoundRestDuration + cooldownSeconds
         }
 
     /**

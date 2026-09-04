@@ -30,7 +30,6 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.SuggestionChip
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -49,7 +48,7 @@ import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
 
 /**
- * Card displaying a Tabata workout routine summary, its exercises, and Edit/Start/Delete actions.
+ * Card displaying a Tabata workout routine summary, its warm-up/cool-down blocks, exercises, and Edit/Start/Delete actions.
  */
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
@@ -125,12 +124,28 @@ fun TabataRoutineCard(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Exercise chips preview
+            // Warmup, Exercises & Cooldown chips preview
             FlowRow(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalArrangement = Arrangement.spacedBy(4.dp),
                 modifier = Modifier.fillMaxWidth()
             ) {
+                if (workout.warmupSeconds > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.tertiaryContainer)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "🔥 Warm-Up (${workout.warmupSeconds}s)",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onTertiaryContainer
+                        )
+                    }
+                }
+
                 workout.exercises.forEach { exercise ->
                     Box(
                         modifier = Modifier
@@ -142,6 +157,22 @@ fun TabataRoutineCard(
                             text = "${exercise.name} (${exercise.workSeconds}s/${exercise.restSeconds}s)",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+                }
+
+                if (workout.cooldownSeconds > 0) {
+                    Box(
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(8.dp))
+                            .background(MaterialTheme.colorScheme.secondaryContainer)
+                            .padding(horizontal = 8.dp, vertical = 4.dp)
+                    ) {
+                        Text(
+                            text = "❄️ Cool-Down (${workout.cooldownSeconds}s)",
+                            style = MaterialTheme.typography.bodySmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSecondaryContainer
                         )
                     }
                 }
@@ -160,6 +191,13 @@ fun TabataRoutineCard(
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
+                    if (workout.warmupSeconds > 0) {
+                        Text(
+                            text = "• Warm-Up: ${workout.warmupSeconds}s",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.tertiary
+                        )
+                    }
                     workout.exercises.forEachIndexed { index, exercise ->
                         Text(
                             text = "${index + 1}. ${exercise.name}: ${exercise.workSeconds}s Work / ${exercise.restSeconds}s Rest",
@@ -170,6 +208,13 @@ fun TabataRoutineCard(
                     if (workout.rounds > 1) {
                         Text(
                             text = "• Rest Between Rounds: ${workout.restBetweenRoundsSeconds}s",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.secondary
+                        )
+                    }
+                    if (workout.cooldownSeconds > 0) {
+                        Text(
+                            text = "• Cool-Down: ${workout.cooldownSeconds}s",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -216,6 +261,8 @@ private fun TabataRoutineCardPreview() {
                 title = "Classic Tabata",
                 rounds = 2,
                 restBetweenRoundsSeconds = 30,
+                warmupSeconds = 30,
+                cooldownSeconds = 30,
                 exercises = listOf(
                     Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
                     Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),

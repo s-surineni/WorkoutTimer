@@ -22,6 +22,24 @@ class WorkoutTest {
   }
 
   @Test
+  fun totalDurationSeconds_withWarmupAndCooldown_computesCorrectly() {
+    val workout = Workout(
+      title = "Complete Tabata",
+      rounds = 1,
+      warmupSeconds = 30,
+      cooldownSeconds = 30,
+      restBetweenRoundsSeconds = 30,
+      exercises = listOf(
+        Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
+        Exercise(name = "Plank", workSeconds = 20, restSeconds = 10)
+      )
+    )
+    // 30s warmup + 50s exercises + 30s cooldown = 110s
+    assertEquals(110, workout.totalDurationSeconds)
+    assertEquals("1:50", workout.formattedTotalDuration())
+  }
+
+  @Test
   fun totalDurationSeconds_multipleRounds_includesInterRoundRestWithoutLastExerciseRest() {
     val workout = Workout(
       title = "2 Round Tabata",

@@ -34,7 +34,9 @@ class CreateTabataScreenTest {
     composeTestRule.onNodeWithText("Create Tabata Workout").assertExists()
     composeTestRule.onNodeWithText("Details").assertExists()
     composeTestRule.onNodeWithText("Exercises (2)").assertExists()
-    composeTestRule.onNodeWithText("1. Workout Details").assertExists()
+    composeTestRule.onNodeWithText("1. Workout Title & Rounds").assertExists()
+    composeTestRule.onNodeWithText("🔥 Warm-Up Block").performScrollTo().assertExists()
+    composeTestRule.onNodeWithText("❄️ Cool-Down Block").performScrollTo().assertExists()
     composeTestRule.onNodeWithText("Save").assertExists()
     composeTestRule.onNodeWithContentDescription("Navigate back").assertExists()
   }
@@ -162,6 +164,8 @@ class CreateTabataScreenTest {
     val sample = Workout(
       title = "Routine To Save",
       rounds = 3,
+      warmupSeconds = 45,
+      cooldownSeconds = 60,
       exercises = listOf(
         Exercise(name = "Burpees", workSeconds = 30, restSeconds = 15)
       )
@@ -181,6 +185,8 @@ class CreateTabataScreenTest {
     assertNotNull(savedWorkout)
     assertEquals("Routine To Save", savedWorkout?.title)
     assertEquals(3, savedWorkout?.rounds)
+    assertEquals(45, savedWorkout?.warmupSeconds)
+    assertEquals(60, savedWorkout?.cooldownSeconds)
   }
 
   @Test

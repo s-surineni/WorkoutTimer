@@ -71,7 +71,7 @@ import com.example.workouttimer.ui.components.AddEditExerciseDialog
 
 /**
  * Full-page screen to create a new Tabata routine or edit an existing one.
- * Uses a tabbed layout to separate "Details" and "Exercises".
+ * Uses a tabbed layout to separate "Details" (including Warm-Up and Cool-Down) and "Exercises".
  * Includes auto-saving on back navigation when all required fields are filled.
  */
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
@@ -88,6 +88,8 @@ fun CreateTabataScreen(
     var titleError by remember { mutableStateOf(false) }
     var rounds by remember { mutableIntStateOf(initialWorkout?.rounds ?: 2) }
     var restBetweenRoundsText by remember { mutableStateOf(initialWorkout?.restBetweenRoundsSeconds?.toString() ?: "30") }
+    var warmupSecondsText by remember { mutableStateOf(initialWorkout?.warmupSeconds?.toString() ?: "0") }
+    var cooldownSecondsText by remember { mutableStateOf(initialWorkout?.cooldownSeconds?.toString() ?: "0") }
 
     val exercises = remember {
         mutableStateListOf<Exercise>().apply {
@@ -135,11 +137,13 @@ fun CreateTabataScreen(
 
     val currentTotalDurationSeconds by remember {
         derivedStateOf {
+            val warmup = warmupSecondsText.toIntOrNull() ?: 0
+            val cooldown = cooldownSecondsText.toIntOrNull() ?: 0
             val restBetweenRounds = restBetweenRoundsText.toIntOrNull() ?: 0
             val singleRoundWork = exercises.sumOf { it.workSeconds }
             val singleRoundRest = exercises.dropLast(1).sumOf { it.restSeconds }
             val singleRound = singleRoundWork + singleRoundRest
-            (singleRound * rounds) + ((rounds - 1).coerceAtLeast(0) * restBetweenRounds)
+            warmup + (singleRound * rounds) + ((rounds - 1).coerceAtLeast(0) * restBetweenRounds) + cooldown
         }
     }
 
@@ -162,11 +166,16 @@ fun CreateTabataScreen(
         if (!isTitleValid || !hasExercises) return null
 
         val restBetweenRounds = restBetweenRoundsText.toIntOrNull() ?: 30
+        val warmup = warmupSecondsText.toIntOrNull() ?: 0
+        val cooldown = cooldownSecondsText.toIntOrNull() ?: 0
+
         return if (initialWorkout != null) {
             initialWorkout.copy(
                 title = trimmedTitle,
                 rounds = rounds,
                 restBetweenRoundsSeconds = restBetweenRounds,
+                warmupSeconds = warmup,
+                cooldownSeconds = cooldown,
                 exercises = exercises.toList()
             )
         } else {
@@ -174,6 +183,8 @@ fun CreateTabataScreen(
                 title = trimmedTitle,
                 rounds = rounds,
                 restBetweenRoundsSeconds = restBetweenRounds,
+                warmupSeconds = warmup,
+                cooldownSeconds = cooldown,
                 exercises = exercises.toList()
             )
         }
@@ -283,7 +294,7 @@ fun CreateTabataScreen(
                     )
 
                     Text(
-                        text = "1. Workout Details",
+                        text = "1. Workout Title & Rounds",
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold
                     )
@@ -304,6 +315,50 @@ fun CreateTabataScreen(
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Next),
                         modifier = Modifier.fillMaxWidth()
                     )
+
+                    // Dedicated Warm-Up Block Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "🔥 Warm-Up Block",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            OutlinedTextField(
+                                value = warmupSecondsText,
+                                onValueChange = { warmupSecondsText = it.filter { c -> c.isDigit() } },
+                                label = { Text("Warm-Up Duration") },
+                                suffix = { Text("s") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Next
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                listOf(0, 15, 30, 45, 60, 90, 120).forEach { s ->
+                                    SuggestionChip(
+                                        onClick = { warmupSecondsText = s.toString() },
+                                        label = { Text(if (s == 0) "Off (0s)" else "${s}s") }
+                                    )
+                                }
+                            }
+                        }
+                    }
 
                     // Number of Rounds Configuration Card
                     Card(
@@ -378,7 +433,7 @@ fun CreateTabataScreen(
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
                                     keyboardType = KeyboardType.Number,
-                                    imeAction = ImeAction.Done
+                                    imeAction = ImeAction.Next
                                 ),
                                 modifier = Modifier.fillMaxWidth()
                             )
@@ -391,6 +446,50 @@ fun CreateTabataScreen(
                                     SuggestionChip(
                                         onClick = { restBetweenRoundsText = s.toString() },
                                         label = { Text("${s}s") }
+                                    )
+                                }
+                            }
+                        }
+                    }
+
+                    // Dedicated Cool-Down Block Card
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                    ) {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                        ) {
+                            Text(
+                                text = "❄️ Cool-Down Block",
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+
+                            OutlinedTextField(
+                                value = cooldownSecondsText,
+                                onValueChange = { cooldownSecondsText = it.filter { c -> c.isDigit() } },
+                                label = { Text("Cool-Down Duration") },
+                                suffix = { Text("s") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(
+                                    keyboardType = KeyboardType.Number,
+                                    imeAction = ImeAction.Done
+                                ),
+                                modifier = Modifier.fillMaxWidth()
+                            )
+
+                            FlowRow(
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                                modifier = Modifier.fillMaxWidth()
+                            ) {
+                                listOf(0, 15, 30, 45, 60, 90, 120).forEach { s ->
+                                    SuggestionChip(
+                                        onClick = { cooldownSecondsText = s.toString() },
+                                        label = { Text(if (s == 0) "Off (0s)" else "${s}s") }
                                     )
                                 }
                             }

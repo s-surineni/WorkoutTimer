@@ -7,7 +7,6 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
-import com.example.workouttimer.data.WorkoutHistoryRecord
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -22,12 +21,13 @@ class MainScreenTest {
     composeTestRule.setContent {
       MainScreenContent(
         workouts = FAKE_DATA,
-        history = FAKE_HISTORY,
         onAddClick = {},
         onEditClick = {},
         onStartWorkout = {},
         onDeleteWorkout = {},
-        onExportAllWorkouts = {}
+        onShareWorkout = {},
+        onExportAllWorkouts = {},
+        onImportWorkouts = {}
       )
     }
   }
@@ -80,19 +80,6 @@ class MainScreenTest {
     composeTestRule.onNodeWithText("Cancel").assertExists()
     composeTestRule.onNodeWithText("Delete").assertExists()
   }
-
-  @Test
-  fun historyTab_displaysTrainingStatsAndClearConfirmation() {
-    composeTestRule.onNodeWithText("History & Stats (1)").performClick()
-    composeTestRule.onNodeWithText("Training Statistics").assertExists()
-    composeTestRule.onNodeWithText("Time Trained").assertExists()
-    composeTestRule.onNodeWithText("Completed").assertExists()
-    composeTestRule.onNodeWithText("Push & Core Tabata").assertExists()
-
-    composeTestRule.onNodeWithContentDescription("Clear History").performClick()
-    composeTestRule.onNodeWithText("Clear Workout History?").assertExists()
-    composeTestRule.onNodeWithText("Clear All").assertExists()
-  }
 }
 
 private val FAKE_DATA = listOf(
@@ -100,6 +87,8 @@ private val FAKE_DATA = listOf(
     id = "1",
     title = "Push & Core Tabata",
     rounds = 2,
+    warmupSeconds = 30,
+    cooldownSeconds = 30,
     exercises = listOf(
       Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
       Exercise(name = "Plank", workSeconds = 20, restSeconds = 10)
@@ -112,17 +101,5 @@ private val FAKE_DATA = listOf(
     exercises = listOf(
       Exercise(name = "Squats", workSeconds = 30, restSeconds = 15)
     )
-  )
-)
-
-private val FAKE_HISTORY = listOf(
-  WorkoutHistoryRecord(
-    id = "h1",
-    workoutId = "1",
-    workoutTitle = "Push & Core Tabata",
-    timestampMillis = System.currentTimeMillis(),
-    totalDurationSeconds = 180,
-    roundsCompleted = 2,
-    totalExercises = 2
   )
 )

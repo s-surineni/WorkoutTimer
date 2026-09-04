@@ -16,14 +16,13 @@ import kotlinx.coroutines.launch
  * Main Room database for the Workout Timer application.
  */
 @Database(
-    entities = [WorkoutEntity::class, WorkoutHistoryEntity::class],
-    version = 2,
+    entities = [WorkoutEntity::class],
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
 abstract class AppDatabase : RoomDatabase() {
     abstract fun workoutDao(): WorkoutDao
-    abstract fun workoutHistoryDao(): WorkoutHistoryDao
 
     companion object {
         @Volatile
@@ -62,6 +61,8 @@ val defaultTabataPresets = listOf(
         title = "Classic Tabata",
         rounds = 2,
         restBetweenRoundsSeconds = 30,
+        warmupSeconds = 30,
+        cooldownSeconds = 30,
         exercises = listOf(
             Exercise(name = "Jumping Jacks", workSeconds = 20, restSeconds = 10),
             Exercise(name = "Push Ups", workSeconds = 20, restSeconds = 10),
@@ -74,6 +75,8 @@ val defaultTabataPresets = listOf(
         title = "Core HIIT Burner",
         rounds = 2,
         restBetweenRoundsSeconds = 30,
+        warmupSeconds = 0,
+        cooldownSeconds = 30,
         exercises = listOf(
             Exercise(name = "Bicycle Crunches", workSeconds = 20, restSeconds = 10),
             Exercise(name = "Mountain Climbers", workSeconds = 20, restSeconds = 10),
@@ -86,6 +89,8 @@ val defaultTabataPresets = listOf(
         title = "Cardio Blast",
         rounds = 3,
         restBetweenRoundsSeconds = 45,
+        warmupSeconds = 30,
+        cooldownSeconds = 0,
         exercises = listOf(
             Exercise(name = "Burpees", workSeconds = 20, restSeconds = 10),
             Exercise(name = "High Knees", workSeconds = 20, restSeconds = 10),
