@@ -103,6 +103,7 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 - **Instrumented Room & UI Tests**:
   - Test Room database operations and DAOs in `app/src/androidTest/` using in-memory databases (`Room.inMemoryDatabaseBuilder`).
   - Add/maintain Compose UI tests in `app/src/androidTest/` using `createComposeRule` verifying node hierarchies, text content, interactive buttons, and sound toggles.
+  - **EMULATOR ONLY**: Always execute instrumented tests via `./scripts/test-on-emulator.sh` to isolate execution to an Android virtual device. Never run bare `./gradlew connectedAndroidTest` or `./gradlew connectedDebugAndroidTest` when physical devices may be attached via ADB.
 - **Zero Warnings**:
   - Ensure zero compilation warnings or deprecations during Kotlin compilation (`./gradlew compileDebugKotlin compileDebugUnitTestKotlin compileDebugAndroidTestKotlin`).
 
@@ -152,6 +153,6 @@ When reviewing or submitting pull requests / code changes in this repository, ch
 
 ### Testing & Quality
 - [ ] Are unit tests updated and passing (`./gradlew testDebugUnitTest`)?
-- [ ] Are instrumented UI & Room tests passing (`./gradlew connectedAndroidTest`)?
+- [ ] Are instrumented UI & Room tests passing on the emulator via `./scripts/test-on-emulator.sh` (NEVER bare `connectedAndroidTest` on physical devices)?
 - [ ] Does the code compile cleanly with no deprecation warnings?
 - [ ] Has the build been verified using `./scripts/gradle-assemble-install-if-changed.sh` or `./gradlew assembleDebug`?

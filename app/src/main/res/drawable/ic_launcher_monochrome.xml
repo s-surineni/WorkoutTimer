@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="utf-8"?>
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
@@ -5,75 +6,60 @@
     android:viewportHeight="108">
 
     <!-- Top Crown Pusher -->
-    <!-- Stem -->
     <path
-        android:fillColor="#94A3B8"
+        android:fillColor="#FFFFFF"
         android:pathData="M52.2,30.5 L52.2,25 L55.8,25 L55.8,30.5 Z" />
-    <!-- Crown Button -->
     <path
-        android:fillColor="#CBD5E1"
+        android:fillColor="#FFFFFF"
         android:pathData="M48,21.5 L60,21.5 A1.5,1.5 0 0,1 61.5,23 L61.5,25.2 L46.5,25.2 L46.5,23 A1.5,1.5 0 0,1 48,21.5 Z" />
 
-    <!-- Left Angled Pusher (-38 deg) -->
+    <!-- Left Angled Pusher -->
     <group
         android:pivotX="54"
         android:pivotY="55"
         android:rotation="-38">
         <path
-            android:fillColor="#94A3B8"
+            android:fillColor="#FFFFFF"
             android:pathData="M52.6,30.5 L52.6,26 L55.4,26 L55.4,30.5 Z" />
         <path
-            android:fillColor="#CBD5E1"
+            android:fillColor="#FFFFFF"
             android:pathData="M50,23 L58,23 A1.2,1.2 0 0,1 59.2,24.2 L59.2,26 L48.8,26 L48.8,24.2 A1.2,1.2 0 0,1 50,23 Z" />
     </group>
 
-    <!-- Right Angled Pusher (+38 deg) -->
+    <!-- Right Angled Pusher -->
     <group
         android:pivotX="54"
         android:pivotY="55"
         android:rotation="38">
         <path
-            android:fillColor="#94A3B8"
+            android:fillColor="#FFFFFF"
             android:pathData="M52.6,30.5 L52.6,26 L55.4,26 L55.4,30.5 Z" />
         <path
-            android:fillColor="#CBD5E1"
+            android:fillColor="#FFFFFF"
             android:pathData="M50,23 L58,23 A1.2,1.2 0 0,1 59.2,24.2 L59.2,26 L48.8,26 L48.8,24.2 A1.2,1.2 0 0,1 50,23 Z" />
     </group>
 
-    <!-- Inner Dial Plate -->
+    <!-- Work Interval Ring -->
     <path
-        android:fillColor="#151B27"
-        android:pathData="M54,55m-24.5,0a24.5,24.5 0 1,1 49,0a24.5,24.5 0 1,1 -49,0" />
-
-    <!-- Subtle Center Vertical Reference Line -->
-    <path
-        android:strokeColor="#22FFFFFF"
-        android:strokeWidth="0.8"
-        android:pathData="M54,37 L54,73" />
-
-    <!-- Work Interval Ring: Royal Cobalt Blue Arc -->
-    <path
-        android:strokeColor="#1D4ED8"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="5.2"
         android:strokeLineCap="round"
         android:pathData="M29.87,59.25 A24.5,24.5 0 1,1 73.31,70.08" />
 
-    <!-- Rest Interval Ring: Sunset Coral Orange Arc -->
+    <!-- Rest Interval Ring -->
     <path
-        android:strokeColor="#FF664C"
+        android:strokeColor="#FFFFFF"
         android:strokeWidth="5.2"
         android:strokeLineCap="round"
+        android:strokeAlpha="0.4"
         android:pathData="M69.08,74.31 A24.5,24.5 0 0,1 31.62,64.96" />
 
     <!-- Clock Hands -->
-    <!-- Primary Interval Hand pointing at 38 deg -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="3.0"
         android:strokeLineCap="round"
         android:pathData="M54,55 L64.64,63.31" />
-
-    <!-- Counterweight Tail at 218 deg -->
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="2.4"
@@ -84,8 +70,5 @@
     <path
         android:fillColor="#FFFFFF"
         android:pathData="M54,55m-3,0a3,3 0 1,1 6,0a3,3 0 1,1 -6,0" />
-    <path
-        android:fillColor="#151B27"
-        android:pathData="M54,55m-1.3,0a1.3,1.3 0 1,1 2.6,0a1.3,1.3 0 1,1 -2.6,0" />
 
 </vector>
