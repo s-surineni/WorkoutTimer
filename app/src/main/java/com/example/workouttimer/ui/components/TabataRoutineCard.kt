@@ -47,6 +47,41 @@ import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
 
+/** Constants and text formatting helpers for [TabataRoutineCard]. */
+object TabataRoutineCardConstants {
+    const val CD_SHARE_ROUTINE = "Share Routine"
+    const val CD_EDIT_ROUTINE = "Edit Routine"
+    const val CD_DELETE_ROUTINE = "Delete Routine"
+    const val ACTION_SHOW_LESS = "Show Less"
+    const val ACTION_VIEW_DETAILS = "View Details"
+    const val ACTION_START = "Start"
+    const val TITLE_SEQUENCE_DETAILS = "Workout Sequence Details:"
+
+    fun summaryText(rounds: Int, exerciseCount: Int, formattedDuration: String): String =
+        "$rounds Rounds • $exerciseCount Exercises • Total: $formattedDuration"
+
+    fun warmupChipLabel(seconds: Int): String =
+        "🔥 Warm-Up (${seconds}s)"
+
+    fun warmupDetailLabel(seconds: Int): String =
+        "• Warm-Up: ${seconds}s"
+
+    fun exerciseChipLabel(name: String, workSeconds: Int, restSeconds: Int): String =
+        "$name (${workSeconds}s/${restSeconds}s)"
+
+    fun cooldownChipLabel(seconds: Int): String =
+        "❄️ Cool-Down (${seconds}s)"
+
+    fun cooldownDetailLabel(seconds: Int): String =
+        "• Cool-Down: ${seconds}s"
+
+    fun restBetweenRoundsDetail(seconds: Int): String =
+        "• Rest Between Rounds: ${seconds}s"
+
+    fun exerciseDetail(index: Int, name: String, workSeconds: Int, restSeconds: Int): String =
+        "${index + 1}. $name: ${workSeconds}s Work / ${restSeconds}s Rest"
+}
+
 /**
  * Card displaying a Tabata workout routine summary, its warm-up/cool-down blocks, exercises, and Edit/Start/Delete actions.
  */
@@ -90,7 +125,11 @@ fun TabataRoutineCard(
                         )
                         Spacer(modifier = Modifier.width(4.dp))
                         Text(
-                            text = "${workout.rounds} Rounds • ${workout.exercises.size} Exercises • Total: ${workout.formattedTotalDuration()}",
+                            text = TabataRoutineCardConstants.summaryText(
+                                rounds = workout.rounds,
+                                exerciseCount = workout.exercises.size,
+                                formattedDuration = workout.formattedTotalDuration()
+                            ),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -101,21 +140,21 @@ fun TabataRoutineCard(
                     IconButton(onClick = onShare) {
                         Icon(
                             imageVector = Icons.Default.Share,
-                            contentDescription = "Share Routine",
+                            contentDescription = TabataRoutineCardConstants.CD_SHARE_ROUTINE,
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     IconButton(onClick = onEdit) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit Routine",
+                            contentDescription = TabataRoutineCardConstants.CD_EDIT_ROUTINE,
                             tint = MaterialTheme.colorScheme.primary
                         )
                     }
                     IconButton(onClick = onDelete) {
                         Icon(
                             imageVector = Icons.Default.Delete,
-                            contentDescription = "Delete Routine",
+                            contentDescription = TabataRoutineCardConstants.CD_DELETE_ROUTINE,
                             tint = MaterialTheme.colorScheme.error
                         )
                     }
@@ -138,7 +177,7 @@ fun TabataRoutineCard(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "🔥 Warm-Up (${workout.warmupSeconds}s)",
+                            text = TabataRoutineCardConstants.warmupChipLabel(workout.warmupSeconds),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onTertiaryContainer
@@ -154,7 +193,7 @@ fun TabataRoutineCard(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "${exercise.name} (${exercise.workSeconds}s/${exercise.restSeconds}s)",
+                            text = TabataRoutineCardConstants.exerciseChipLabel(exercise.name, exercise.workSeconds, exercise.restSeconds),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
                         )
@@ -169,7 +208,7 @@ fun TabataRoutineCard(
                             .padding(horizontal = 8.dp, vertical = 4.dp)
                     ) {
                         Text(
-                            text = "❄️ Cool-Down (${workout.cooldownSeconds}s)",
+                            text = TabataRoutineCardConstants.cooldownChipLabel(workout.cooldownSeconds),
                             style = MaterialTheme.typography.bodySmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSecondaryContainer
@@ -187,34 +226,34 @@ fun TabataRoutineCard(
                     verticalArrangement = Arrangement.spacedBy(4.dp)
                 ) {
                     Text(
-                        text = "Workout Sequence Details:",
+                        text = TabataRoutineCardConstants.TITLE_SEQUENCE_DETAILS,
                         style = MaterialTheme.typography.labelMedium,
                         fontWeight = FontWeight.Bold
                     )
                     if (workout.warmupSeconds > 0) {
                         Text(
-                            text = "• Warm-Up: ${workout.warmupSeconds}s",
+                            text = TabataRoutineCardConstants.warmupDetailLabel(workout.warmupSeconds),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.tertiary
                         )
                     }
                     workout.exercises.forEachIndexed { index, exercise ->
                         Text(
-                            text = "${index + 1}. ${exercise.name}: ${exercise.workSeconds}s Work / ${exercise.restSeconds}s Rest",
+                            text = TabataRoutineCardConstants.exerciseDetail(index, exercise.name, exercise.workSeconds, exercise.restSeconds),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
                     if (workout.rounds > 1) {
                         Text(
-                            text = "• Rest Between Rounds: ${workout.restBetweenRoundsSeconds}s",
+                            text = TabataRoutineCardConstants.restBetweenRoundsDetail(workout.restBetweenRoundsSeconds),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
                     }
                     if (workout.cooldownSeconds > 0) {
                         Text(
-                            text = "• Cool-Down: ${workout.cooldownSeconds}s",
+                            text = TabataRoutineCardConstants.cooldownDetailLabel(workout.cooldownSeconds),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.secondary
                         )
@@ -236,7 +275,7 @@ fun TabataRoutineCard(
                         contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text(if (expanded) "Show Less" else "View Details")
+                    Text(if (expanded) TabataRoutineCardConstants.ACTION_SHOW_LESS else TabataRoutineCardConstants.ACTION_VIEW_DETAILS)
                 }
 
                 Button(
@@ -245,7 +284,7 @@ fun TabataRoutineCard(
                 ) {
                     Icon(imageVector = Icons.Default.PlayArrow, contentDescription = null)
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("Start")
+                    Text(TabataRoutineCardConstants.ACTION_START)
                 }
             }
         }

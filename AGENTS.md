@@ -86,7 +86,15 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 7. Concurrency, Coroutines & Threading
+## 7. String Management & Constants
+- **No Hardcoded Strings**:
+  - Always use constants when handling strings, not hard coded values.
+  - Extract user-facing text, accessibility content descriptions, phase/status labels, button actions, and formatting helper templates into well-named constants (`const val` in dedicated objects, companion objects, or top-level definitions) rather than hardcoded string literals in composables or business logic.
+  - Re-use these string constants in unit and instrumented UI tests to prevent duplication, reduce typo risks, and ensure resilience during refactorings.
+
+---
+
+## 8. Concurrency, Coroutines & Threading
 - **Structured Concurrency**:
   - Never use `GlobalScope`. Always scope coroutines to `viewModelScope`, `rememberCoroutineScope()`, or `LaunchedEffect`.
 - **Dispatcher Isolation**:
@@ -95,7 +103,7 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 8. Testing Standards
+## 9. Testing Standards
 - **Unit Tests (JVM)**:
   - All ViewModels, domain logic, Audio Managers, and Repositories must be covered by JUnit tests in `app/src/test/`.
   - Use `kotlinx-coroutines-test` with a `MainDispatcherRule` (`StandardTestDispatcher`) and `advanceUntilIdle()` to ensure deterministic coroutine execution.
@@ -109,7 +117,7 @@ Any LLM assistant, code reviewer, or developer working on or reviewing the **Wor
 
 ---
 
-## 9. Categorized Review Checklist for LLMs & Developers
+## 10. Categorized Review Checklist for LLMs & Developers
 When reviewing or submitting pull requests / code changes in this repository, check against this list:
 
 ### Architecture & UDF
@@ -136,6 +144,10 @@ When reviewing or submitting pull requests / code changes in this repository, ch
 - [ ] Are high-frequency state reads passed via lambdas rather than direct values?
 - [ ] Are side-effects correctly scoped in `LaunchedEffect` with appropriate keys?
 - [ ] Are `@Preview`s provided for all components and screen states?
+
+### String Management & Constants
+- [ ] Are strings handled using constants instead of hardcoded literal values?
+- [ ] Are accessibility content descriptions and labels referenced from centralized constants?
 
 ### Accessibility & Ergonomics
 - [ ] Do all interactive icon buttons have descriptive `contentDescription`s?

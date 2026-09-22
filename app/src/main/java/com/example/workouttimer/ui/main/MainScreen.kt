@@ -62,6 +62,25 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+/** Constants and text formatting helpers for [MainScreen]. */
+object MainScreenConstants {
+    const val TOP_APP_BAR_TITLE = "Tabata Workout Timer"
+    const val CD_EXPORT_ALL_ROUTINES = "Export All Routines"
+    const val CD_IMPORT_ROUTINE = "Import Routine"
+    const val CD_ADD_TABATA_WORKOUT = "Add Tabata Workout"
+
+    const val EMPTY_STATE_TITLE = "No Tabata routines yet"
+    const val EMPTY_STATE_SUBTITLE =
+        "Tap the + button below to create your first routine, or import ready-to-go workouts from the top menu."
+
+    const val DIALOG_DELETE_TITLE = "Delete Workout Routine?"
+    const val ACTION_DELETE = "Delete"
+    const val ACTION_CANCEL = "Cancel"
+
+    fun deleteConfirmationMessage(workoutTitle: String): String =
+        "Are you sure you want to delete \"$workoutTitle\"? This action cannot be undone."
+}
+
 @Composable
 fun MainScreen(
     onAddClick: () -> Unit,
@@ -183,14 +202,14 @@ fun MainScreenContent(
             },
             title = {
                 Text(
-                    text = "Delete Workout Routine?",
+                    text = MainScreenConstants.DIALOG_DELETE_TITLE,
                     style = MaterialTheme.typography.headlineSmall,
                     fontWeight = FontWeight.Bold
                 )
             },
             text = {
                 Text(
-                    text = "Are you sure you want to delete \"${workout.title}\"? This action cannot be undone.",
+                    text = MainScreenConstants.deleteConfirmationMessage(workout.title),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -205,12 +224,12 @@ fun MainScreenContent(
                         contentColor = MaterialTheme.colorScheme.onError
                     )
                 ) {
-                    Text("Delete")
+                    Text(MainScreenConstants.ACTION_DELETE)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { workoutToDelete = null }) {
-                    Text("Cancel")
+                    Text(MainScreenConstants.ACTION_CANCEL)
                 }
             }
         )
@@ -220,13 +239,13 @@ fun MainScreenContent(
         modifier = modifier,
         topBar = {
             TopAppBar(
-                title = { Text("Tabata Workout Timer") },
+                title = { Text(MainScreenConstants.TOP_APP_BAR_TITLE) },
                 actions = {
                     if (workouts.isNotEmpty()) {
                         IconButton(onClick = onExportAllWorkouts) {
                             Icon(
                                 imageVector = Icons.Default.FileUpload,
-                                contentDescription = "Export All Routines",
+                                contentDescription = MainScreenConstants.CD_EXPORT_ALL_ROUTINES,
                                 tint = MaterialTheme.colorScheme.onPrimaryContainer
                             )
                         }
@@ -234,7 +253,7 @@ fun MainScreenContent(
                     IconButton(onClick = { showImportDialog = true }) {
                         Icon(
                             imageVector = Icons.Default.FileDownload,
-                            contentDescription = "Import Routine",
+                            contentDescription = MainScreenConstants.CD_IMPORT_ROUTINE,
                             tint = MaterialTheme.colorScheme.onPrimaryContainer
                         )
                     }
@@ -251,7 +270,10 @@ fun MainScreenContent(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary
             ) {
-                Icon(imageVector = Icons.Default.Add, contentDescription = "Add Tabata Workout")
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = MainScreenConstants.CD_ADD_TABATA_WORKOUT
+                )
             }
         }
     ) { innerPadding ->
@@ -275,13 +297,13 @@ fun MainScreenContent(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
-                        text = "No Tabata routines yet",
+                        text = MainScreenConstants.EMPTY_STATE_TITLE,
                         style = MaterialTheme.typography.headlineSmall,
                         textAlign = TextAlign.Center
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Tap the + button below to create your first routine, or import ready-to-go workouts from the top menu.",
+                        text = MainScreenConstants.EMPTY_STATE_SUBTITLE,
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         textAlign = TextAlign.Center

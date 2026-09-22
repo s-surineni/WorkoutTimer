@@ -32,6 +32,18 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.delay
 
+/** Constants and text formatting helpers for [ExerciseTimerCard]. */
+object ExerciseTimerCardConstants {
+    const val CD_START = "Start"
+    const val CD_PAUSE = "Pause"
+    const val CD_DELETE_WORKOUT = "Delete Workout"
+    const val ACTION_RESET = "Reset"
+
+    fun workoutSubtitle(seconds: Int): String = "Workout (${seconds}s)"
+    fun cooldownSubtitle(seconds: Int): String = "Cooldown (${seconds}s)"
+    fun timeLeftText(seconds: Int): String = "Time left: ${seconds}s"
+}
+
 /**
  * A simple Compose card that accepts an exercise name, workout time (seconds),
  * and cooldown time (seconds). Includes start/pause/reset and a progress bar.
@@ -82,7 +94,7 @@ fun ExerciseTimerCard(
                 Column(modifier = Modifier.weight(1f)) {
                     Text(text = exerciseName, style = MaterialTheme.typography.titleMedium)
                     Text(
-                        text = if (isWorkoutPhase) "Workout (${workoutSeconds}s)" else "Cooldown (${cooldownSeconds}s)",
+                        text = if (isWorkoutPhase) ExerciseTimerCardConstants.workoutSubtitle(workoutSeconds) else ExerciseTimerCardConstants.cooldownSubtitle(cooldownSeconds),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -90,16 +102,16 @@ fun ExerciseTimerCard(
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     IconButton(onClick = { isRunning = true }) {
-                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = "Start")
+                        Icon(imageVector = Icons.Default.PlayArrow, contentDescription = ExerciseTimerCardConstants.CD_START)
                     }
                     IconButton(onClick = { isRunning = false }) {
-                        Icon(imageVector = Icons.Default.Pause, contentDescription = "Pause")
+                        Icon(imageVector = Icons.Default.Pause, contentDescription = ExerciseTimerCardConstants.CD_PAUSE)
                     }
                     if (onDelete != null) {
                         IconButton(onClick = onDelete) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete Workout",
+                                contentDescription = ExerciseTimerCardConstants.CD_DELETE_WORKOUT,
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -109,7 +121,10 @@ fun ExerciseTimerCard(
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            Text(text = "Time left: ${timeLeft}s", style = MaterialTheme.typography.bodyLarge)
+            Text(
+                text = ExerciseTimerCardConstants.timeLeftText(timeLeft),
+                style = MaterialTheme.typography.bodyLarge
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
@@ -127,7 +142,7 @@ fun ExerciseTimerCard(
                     isWorkoutPhase = true
                     timeLeft = workoutSeconds.coerceAtLeast(0)
                 }) {
-                    Text("Reset")
+                    Text(ExerciseTimerCardConstants.ACTION_RESET)
                 }
             }
         }

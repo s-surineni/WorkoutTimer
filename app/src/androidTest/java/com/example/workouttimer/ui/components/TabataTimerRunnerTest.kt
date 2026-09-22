@@ -39,12 +39,28 @@ class TabataTimerRunnerTest {
             )
         }
 
-        composeTestRule.onNodeWithText("HIIT Sprint").assertExists()
-        composeTestRule.onNodeWithText("GET READY").assertExists()
-        composeTestRule.onNodeWithText("Up Next: Warm-Up (30s)").assertExists()
-        composeTestRule.onNodeWithContentDescription("Lock Screen").assertExists()
-        composeTestRule.onNodeWithContentDescription("Mute Sound").assertExists()
-        composeTestRule.onNodeWithContentDescription("Close Timer").assertExists()
+        composeTestRule.onNodeWithText(sampleWorkout.title).assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.LABEL_GET_READY).assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE).assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.upNextRound(1, sampleWorkout.exercises[0].name)).assertExists()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_LOCK_SCREEN).assertExists()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_MUTE_SOUND).assertExists()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_CLOSE_TIMER).assertExists()
+    }
+
+    @Test
+    fun tabataTimerRunner_preparePhase_showsFirstExerciseWhenNoWarmup() {
+        val noWarmupWorkout = sampleWorkout.copy(warmupSeconds = 0)
+        composeTestRule.setContent {
+            TabataTimerRunner(
+                workout = noWarmupWorkout,
+                onDismiss = {},
+                audioFeedbackManager = NoOpAudioFeedbackManager()
+            )
+        }
+
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.LABEL_GET_READY).assertExists()
+        composeTestRule.onNodeWithText(sampleWorkout.exercises[0].name).assertExists()
     }
 
     @Test
@@ -58,11 +74,11 @@ class TabataTimerRunnerTest {
         }
 
         // Skip GET READY -> Moves to WARM-UP
-        composeTestRule.onNodeWithContentDescription("Skip Exercise").performClick()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_SKIP_EXERCISE).performClick()
 
-        composeTestRule.onNodeWithText("WARM-UP").assertExists()
-        composeTestRule.onNodeWithText("Warm-Up & Mobilize").assertExists()
-        composeTestRule.onNodeWithText("Up Next: Round 1 • High Knees").assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.LABEL_WARMUP).assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE).assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.upNextRound(1, sampleWorkout.exercises[0].name)).assertExists()
     }
 
     @Test
@@ -75,11 +91,11 @@ class TabataTimerRunnerTest {
             )
         }
 
-        val soundButton = composeTestRule.onNodeWithContentDescription("Mute Sound")
+        val soundButton = composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_MUTE_SOUND)
         soundButton.assertExists()
         soundButton.performClick()
 
-        composeTestRule.onNodeWithContentDescription("Unmute Sound").assertExists()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_UNMUTE_SOUND).assertExists()
     }
 
     @Test
@@ -93,14 +109,14 @@ class TabataTimerRunnerTest {
         }
 
         // Lock screen
-        composeTestRule.onNodeWithContentDescription("Lock Screen").performClick()
-        composeTestRule.onNodeWithContentDescription("Unlock Screen").assertExists()
-        composeTestRule.onNodeWithText("Screen Locked").assertExists()
-        composeTestRule.onNodeWithText("Unlock").assertExists()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_LOCK_SCREEN).performClick()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_UNLOCK_SCREEN).assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.TEXT_SCREEN_LOCKED).assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.TEXT_UNLOCK).assertExists()
 
         // Unlock screen
-        composeTestRule.onNodeWithText("Unlock").performClick()
-        composeTestRule.onNodeWithContentDescription("Lock Screen").assertExists()
+        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.TEXT_UNLOCK).performClick()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_LOCK_SCREEN).assertExists()
     }
 
     @Test
@@ -114,7 +130,7 @@ class TabataTimerRunnerTest {
             )
         }
 
-        composeTestRule.onNodeWithContentDescription("Close Timer").performClick()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_CLOSE_TIMER).performClick()
         assertTrue(dismissed)
     }
 }

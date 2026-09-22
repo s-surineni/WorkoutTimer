@@ -19,3 +19,8 @@ local.properties
 .last_sources_hash
 .*_hash
 
+
+# Keystores & Signing credentials
+*.jks
+*.keystore
+keystore.properties

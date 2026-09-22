@@ -91,6 +91,75 @@ enum class TabataPhase {
     COMPLETED
 }
 
+/** Constants and text formatting helpers for [TabataTimerRunner]. */
+object TabataTimerRunnerConstants {
+    // Animation labels
+    const val ANIM_LABEL_PHASE_COLOR = "phaseColor"
+    const val ANIM_LABEL_CARD_CONTAINER_COLOR = "cardContainerColor"
+    const val ANIM_LABEL_ON_CARD_COLOR = "onCardColor"
+
+    // Phase badge labels
+    const val LABEL_GET_READY = "GET READY"
+    const val LABEL_WARMUP = "WARM-UP"
+    const val LABEL_WORK = "WORK"
+    const val LABEL_REST = "REST"
+    const val LABEL_ROUND_REST = "ROUND REST"
+    const val LABEL_COOLDOWN = "COOL-DOWN"
+    const val LABEL_FINISHED = "FINISHED!"
+
+    // Exercise & Phase display titles
+    const val TITLE_WORKOUT_COMPLETE = "Workout Complete!"
+    const val TITLE_WARMUP_MOBILIZE = "Warm-Up & Mobilize"
+    const val TITLE_CATCH_BREATH = "Catch Your Breath"
+    const val TITLE_COOLDOWN_STRETCH = "Cool-Down & Stretch"
+
+    // Subtitles
+    const val SUBTITLE_WARMUP_PHASE = "Warm-Up Phase • Getting Ready"
+    const val SUBTITLE_COOLDOWN_PHASE = "Cool-Down Phase • Recovery"
+    const val SUBTITLE_WORKOUT_FINISHED = "Workout Finished"
+
+    // Screen lock overlay
+    const val TEXT_SCREEN_LOCKED = "Screen Locked"
+    const val TEXT_UNLOCK = "Unlock"
+
+    // Accessibility content descriptions
+    const val CD_UNLOCK_SCREEN = "Unlock Screen"
+    const val CD_LOCK_SCREEN = "Lock Screen"
+    const val CD_MUTE_SOUND = "Mute Sound"
+    const val CD_UNMUTE_SOUND = "Unmute Sound"
+    const val CD_CLOSE_TIMER = "Close Timer"
+    const val CD_PREVIOUS_EXERCISE = "Previous Exercise"
+    const val CD_SKIP_EXERCISE = "Skip Exercise"
+    const val CD_RESET_WORKOUT = "Reset Workout"
+    const val CD_PAUSE = "Pause"
+    const val CD_PLAY = "Play"
+
+    // Up next indicators
+    const val TEXT_FINAL_EXERCISE = "Final Exercise!"
+
+    // Dynamic text helpers
+    fun subtitleGettingReady(totalRounds: Int): String =
+        "Round 1 of $totalRounds • Getting Ready"
+
+    fun subtitleRoundProgress(currentRound: Int, totalRounds: Int, currentExerciseIndex: Int, totalExercises: Int): String =
+        "Round $currentRound of $totalRounds • Exercise ${currentExerciseIndex + 1} of $totalExercises"
+
+    fun upNextRound(round: Int, exerciseName: String): String =
+        "Up Next: Round $round • $exerciseName"
+
+    fun upNextRoundRest(seconds: Int): String =
+        "Up Next: Round Rest (${seconds}s)"
+
+    fun upNextCoolDown(seconds: Int): String =
+        "Up Next: Cool-Down (${seconds}s)"
+
+    fun upNextRest(seconds: Int): String =
+        "Up Next: Rest (${seconds}s)"
+
+    fun upNextExercise(name: String, seconds: Int): String =
+        "Up Next: $name (${seconds}s)"
+}
+
 /**
  * Full interactive Tabata Workout Timer Runner with distinct, high-contrast colors
  * for Warm-Up, Work, Rest, Round Rest, and Cool-Down intervals, immersive full-screen display
@@ -340,7 +409,7 @@ fun TabataTimerRunner(
             TabataPhase.COMPLETED -> Color(0xFF2E7D32) // Satisfying Success Green
         },
         animationSpec = tween(durationMillis = 350),
-        label = "phaseColor"
+        label = TabataTimerRunnerConstants.ANIM_LABEL_PHASE_COLOR
     )
 
     val cardContainerColor by animateColorAsState(
@@ -354,7 +423,7 @@ fun TabataTimerRunner(
             TabataPhase.COMPLETED -> Color(0xFFE8F5E9) // Light Green Container
         },
         animationSpec = tween(durationMillis = 350),
-        label = "cardContainerColor"
+        label = TabataTimerRunnerConstants.ANIM_LABEL_CARD_CONTAINER_COLOR
     )
 
     val onCardColor by animateColorAsState(
@@ -368,7 +437,7 @@ fun TabataTimerRunner(
             TabataPhase.COMPLETED -> Color(0xFF0F3D17)
         },
         animationSpec = tween(durationMillis = 350),
-        label = "onCardColor"
+        label = TabataTimerRunnerConstants.ANIM_LABEL_ON_CARD_COLOR
     )
 
     Dialog(
@@ -431,10 +500,11 @@ fun TabataTimerRunner(
                         )
                         Text(
                             text = when (phase) {
-                                TabataPhase.WARMUP -> "Warm-Up Phase • Getting Ready"
-                                TabataPhase.COOLDOWN -> "Cool-Down Phase • Recovery"
-                                TabataPhase.COMPLETED -> "Workout Finished"
-                                else -> "Round $currentRound of ${workout.rounds} • Exercise ${currentExerciseIndex + 1} of ${workout.exercises.size}"
+                                TabataPhase.PREPARE -> if (workout.warmupSeconds > 0) TabataTimerRunnerConstants.SUBTITLE_WARMUP_PHASE else TabataTimerRunnerConstants.subtitleGettingReady(workout.rounds)
+                                TabataPhase.WARMUP -> TabataTimerRunnerConstants.SUBTITLE_WARMUP_PHASE
+                                TabataPhase.COOLDOWN -> TabataTimerRunnerConstants.SUBTITLE_COOLDOWN_PHASE
+                                TabataPhase.COMPLETED -> TabataTimerRunnerConstants.SUBTITLE_WORKOUT_FINISHED
+                                else -> TabataTimerRunnerConstants.subtitleRoundProgress(currentRound, workout.rounds, currentExerciseIndex, workout.exercises.size)
                             },
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -448,7 +518,7 @@ fun TabataTimerRunner(
                         ) {
                             Icon(
                                 imageVector = if (isScreenLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                                contentDescription = if (isScreenLocked) "Unlock Screen" else "Lock Screen",
+                                contentDescription = if (isScreenLocked) TabataTimerRunnerConstants.CD_UNLOCK_SCREEN else TabataTimerRunnerConstants.CD_LOCK_SCREEN,
                                 tint = if (isScreenLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -458,14 +528,17 @@ fun TabataTimerRunner(
                         ) {
                             Icon(
                                 imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                                contentDescription = if (isSoundEnabled) "Mute Sound" else "Unmute Sound"
+                                contentDescription = if (isSoundEnabled) TabataTimerRunnerConstants.CD_MUTE_SOUND else TabataTimerRunnerConstants.CD_UNMUTE_SOUND
                             )
                         }
                         IconButton(
                             onClick = onDismiss,
                             enabled = !isScreenLocked
                         ) {
-                            Icon(imageVector = Icons.Default.Close, contentDescription = "Close Timer")
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = TabataTimerRunnerConstants.CD_CLOSE_TIMER
+                            )
                         }
                     }
                 }
@@ -493,13 +566,13 @@ fun TabataTimerRunner(
                         ) {
                             Text(
                                 text = when (phase) {
-                                    TabataPhase.PREPARE -> "GET READY"
-                                    TabataPhase.WARMUP -> "WARM-UP"
-                                    TabataPhase.WORK -> "WORK"
-                                    TabataPhase.REST -> "REST"
-                                    TabataPhase.ROUND_REST -> "ROUND REST"
-                                    TabataPhase.COOLDOWN -> "COOL-DOWN"
-                                    TabataPhase.COMPLETED -> "FINISHED!"
+                                    TabataPhase.PREPARE -> TabataTimerRunnerConstants.LABEL_GET_READY
+                                    TabataPhase.WARMUP -> TabataTimerRunnerConstants.LABEL_WARMUP
+                                    TabataPhase.WORK -> TabataTimerRunnerConstants.LABEL_WORK
+                                    TabataPhase.REST -> TabataTimerRunnerConstants.LABEL_REST
+                                    TabataPhase.ROUND_REST -> TabataTimerRunnerConstants.LABEL_ROUND_REST
+                                    TabataPhase.COOLDOWN -> TabataTimerRunnerConstants.LABEL_COOLDOWN
+                                    TabataPhase.COMPLETED -> TabataTimerRunnerConstants.LABEL_FINISHED
                                 },
                                 style = MaterialTheme.typography.titleMedium,
                                 fontWeight = FontWeight.ExtraBold,
@@ -519,7 +592,7 @@ fun TabataTimerRunner(
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = "Workout Complete!",
+                                text = TabataTimerRunnerConstants.TITLE_WORKOUT_COMPLETE,
                                 style = MaterialTheme.typography.headlineMedium,
                                 fontWeight = FontWeight.Bold,
                                 color = onCardColor,
@@ -528,9 +601,11 @@ fun TabataTimerRunner(
                         } else {
                             Text(
                                 text = when (phase) {
-                                    TabataPhase.WARMUP -> "Warm-Up & Mobilize"
-                                    TabataPhase.ROUND_REST -> "Catch Your Breath"
-                                    TabataPhase.COOLDOWN -> "Cool-Down & Stretch"
+                                    TabataPhase.PREPARE -> if (workout.warmupSeconds > 0) TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE else currentExercise.name
+                                    TabataPhase.WARMUP -> TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE
+                                    TabataPhase.REST -> nextExercise?.name ?: currentExercise.name
+                                    TabataPhase.ROUND_REST -> TabataTimerRunnerConstants.TITLE_CATCH_BREATH
+                                    TabataPhase.COOLDOWN -> TabataTimerRunnerConstants.TITLE_COOLDOWN_STRETCH
                                     else -> currentExercise.name
                                 },
                                 style = MaterialTheme.typography.headlineMedium,
@@ -571,20 +646,27 @@ fun TabataTimerRunner(
                         if (phase != TabataPhase.COMPLETED) {
                             val isLastExerciseInRound = currentExerciseIndex + 1 >= workout.exercises.size
                             val upNextText = when {
-                                phase == TabataPhase.PREPARE && workout.warmupSeconds > 0 -> "Up Next: Warm-Up (${workout.warmupSeconds}s)"
-                                phase == TabataPhase.PREPARE -> "Up Next: ${workout.exercises[0].name} (${workout.exercises[0].workSeconds}s)"
-                                phase == TabataPhase.WARMUP -> "Up Next: Round 1 • ${workout.exercises[0].name}"
+                                phase == TabataPhase.PREPARE && workout.warmupSeconds > 0 ->
+                                    TabataTimerRunnerConstants.upNextRound(1, workout.exercises[0].name)
+                                phase == TabataPhase.PREPARE -> null
+                                phase == TabataPhase.WARMUP ->
+                                    TabataTimerRunnerConstants.upNextRound(1, workout.exercises[0].name)
                                 isLastExerciseInRound && currentRound < workout.rounds -> {
-                                    if (workout.restBetweenRoundsSeconds > 0) {
-                                        "Up Next: Round Rest (${workout.restBetweenRoundsSeconds}s)"
+                                    if (phase == TabataPhase.WORK && workout.restBetweenRoundsSeconds > 0) {
+                                        TabataTimerRunnerConstants.upNextRoundRest(workout.restBetweenRoundsSeconds)
                                     } else {
-                                        "Up Next: Round ${currentRound + 1} • ${workout.exercises[0].name}"
+                                        TabataTimerRunnerConstants.upNextRound(currentRound + 1, workout.exercises[0].name)
                                     }
                                 }
-                                isLastExerciseInRound && currentRound == workout.rounds && workout.cooldownSeconds > 0 -> "Up Next: Cool-Down (${workout.cooldownSeconds}s)"
-                                isLastExerciseInRound && currentRound == workout.rounds -> "Final Exercise!"
-                                nextExercise != null && phase == TabataPhase.WORK && currentExercise.restSeconds > 0 -> "Up Next: Rest (${currentExercise.restSeconds}s)"
-                                nextExercise != null -> "Up Next: ${nextExercise.name} (${nextExercise.workSeconds}s)"
+                                isLastExerciseInRound && currentRound == workout.rounds && workout.cooldownSeconds > 0 ->
+                                    TabataTimerRunnerConstants.upNextCoolDown(workout.cooldownSeconds)
+                                isLastExerciseInRound && currentRound == workout.rounds ->
+                                    TabataTimerRunnerConstants.TEXT_FINAL_EXERCISE
+                                nextExercise != null && phase == TabataPhase.WORK && currentExercise.restSeconds > 0 ->
+                                    TabataTimerRunnerConstants.upNextRest(currentExercise.restSeconds)
+                                phase == TabataPhase.REST -> null
+                                nextExercise != null ->
+                                    TabataTimerRunnerConstants.upNextExercise(nextExercise.name, nextExercise.workSeconds)
                                 else -> null
                             }
 
@@ -630,7 +712,7 @@ fun TabataTimerRunner(
                                 )
                                 Spacer(modifier = Modifier.width(8.dp))
                                 Text(
-                                    text = "Screen Locked",
+                                    text = TabataTimerRunnerConstants.TEXT_SCREEN_LOCKED,
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -647,7 +729,7 @@ fun TabataTimerRunner(
                                     modifier = Modifier.size(16.dp)
                                 )
                                 Spacer(modifier = Modifier.width(6.dp))
-                                Text("Unlock")
+                                Text(TabataTimerRunnerConstants.TEXT_UNLOCK)
                             }
                         }
                     }
@@ -663,7 +745,10 @@ fun TabataTimerRunner(
                         onClick = { moveToPrevious() },
                         enabled = phase != TabataPhase.COMPLETED && !isScreenLocked
                     ) {
-                        Icon(imageVector = Icons.Default.FastRewind, contentDescription = "Previous Exercise")
+                        Icon(
+                            imageVector = Icons.Default.FastRewind,
+                            contentDescription = TabataTimerRunnerConstants.CD_PREVIOUS_EXERCISE
+                        )
                     }
 
                     FilledIconButton(
@@ -685,7 +770,7 @@ fun TabataTimerRunner(
                                 isRunning -> Icons.Default.Pause
                                 else -> Icons.Default.PlayArrow
                             },
-                            contentDescription = if (isRunning) "Pause" else "Play",
+                            contentDescription = if (isRunning) TabataTimerRunnerConstants.CD_PAUSE else TabataTimerRunnerConstants.CD_PLAY,
                             modifier = Modifier.size(36.dp),
                             tint = Color.White
                         )
@@ -695,14 +780,20 @@ fun TabataTimerRunner(
                         onClick = { moveToNext() },
                         enabled = phase != TabataPhase.COMPLETED && !isScreenLocked
                     ) {
-                        Icon(imageVector = Icons.Default.FastForward, contentDescription = "Skip Exercise")
+                        Icon(
+                            imageVector = Icons.Default.FastForward,
+                            contentDescription = TabataTimerRunnerConstants.CD_SKIP_EXERCISE
+                        )
                     }
 
                     IconButton(
                         onClick = { resetWorkout() },
                         enabled = !isScreenLocked
                     ) {
-                        Icon(imageVector = Icons.Default.Replay, contentDescription = "Reset Workout")
+                        Icon(
+                            imageVector = Icons.Default.Replay,
+                            contentDescription = TabataTimerRunnerConstants.CD_RESET_WORKOUT
+                        )
                     }
                 }
             }

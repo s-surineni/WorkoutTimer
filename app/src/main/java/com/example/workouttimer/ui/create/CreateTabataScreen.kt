@@ -69,6 +69,29 @@ import com.example.workouttimer.data.Workout
 import com.example.workouttimer.theme.WorkoutTimerTheme
 import com.example.workouttimer.ui.components.AddEditExerciseDialog
 
+/** Constants and text formatting helpers for [CreateTabataScreen]. */
+object CreateTabataScreenConstants {
+    const val TITLE_EDIT = "Edit Tabata Workout"
+    const val TITLE_CREATE = "Create Tabata Workout"
+    const val CD_NAVIGATE_BACK = "Navigate back"
+    const val ACTION_SAVE = "Save"
+    const val TAB_DETAILS = "Details"
+    const val TITLE_WARMUP_BLOCK = "🔥 Warm-Up Block"
+    const val LABEL_WARMUP_DURATION = "Warm-Up Duration"
+    const val CD_DECREASE_ROUNDS = "Decrease rounds"
+    const val CD_INCREASE_ROUNDS = "Increase rounds"
+    const val TITLE_COOLDOWN_BLOCK = "❄️ Cool-Down Block"
+    const val LABEL_COOLDOWN_DURATION = "Cool-Down Duration"
+    const val CD_EDIT_EXERCISE = "Edit exercise"
+    const val CD_MOVE_EXERCISE_UP = "Move exercise up"
+    const val CD_MOVE_EXERCISE_DOWN = "Move exercise down"
+    const val CD_REMOVE_EXERCISE = "Remove exercise"
+    const val ACTION_ADD_EXERCISE = "Add Exercise"
+
+    fun exercisesTabTitle(count: Int): String = "Exercises ($count)"
+    fun numberOfRounds(rounds: Int): String = "Number of Rounds: $rounds"
+}
+
 /**
  * Full-page screen to create a new Tabata routine or edit an existing one.
  * Uses a tabbed layout to separate "Details" (including Warm-Up and Cool-Down) and "Exercises".
@@ -227,19 +250,19 @@ fun CreateTabataScreen(
         modifier = modifier.fillMaxSize(),
         topBar = {
             TopAppBar(
-                title = { Text(if (isEditMode) "Edit Tabata Workout" else "Create Tabata Workout") },
+                title = { Text(if (isEditMode) CreateTabataScreenConstants.TITLE_EDIT else CreateTabataScreenConstants.TITLE_CREATE) },
                 navigationIcon = {
                     IconButton(onClick = { handleBackNavigation() }) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Navigate back"
+                            contentDescription = CreateTabataScreenConstants.CD_NAVIGATE_BACK
                         )
                     }
                 },
                 actions = {
                     TextButton(onClick = { validateAndSave() }) {
                         Text(
-                            text = "Save",
+                            text = CreateTabataScreenConstants.ACTION_SAVE,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onPrimaryContainer
@@ -266,13 +289,13 @@ fun CreateTabataScreen(
                 Tab(
                     selected = selectedTabIndex == 0,
                     onClick = { selectedTabIndex = 0 },
-                    text = { Text("Details") },
+                    text = { Text(CreateTabataScreenConstants.TAB_DETAILS) },
                     icon = { Icon(Icons.Default.Tune, contentDescription = null) }
                 )
                 Tab(
                     selected = selectedTabIndex == 1,
                     onClick = { selectedTabIndex = 1 },
-                    text = { Text("Exercises (${exercises.size})") },
+                    text = { Text(CreateTabataScreenConstants.exercisesTabTitle(exercises.size)) },
                     icon = { Icon(Icons.Default.FitnessCenter, contentDescription = null) }
                 )
             }
@@ -328,7 +351,7 @@ fun CreateTabataScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "🔥 Warm-Up Block",
+                                text = CreateTabataScreenConstants.TITLE_WARMUP_BLOCK,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
@@ -336,7 +359,7 @@ fun CreateTabataScreen(
                             OutlinedTextField(
                                 value = warmupSecondsText,
                                 onValueChange = { warmupSecondsText = it.filter { c -> c.isDigit() } },
-                                label = { Text("Warm-Up Duration") },
+                                label = { Text(CreateTabataScreenConstants.LABEL_WARMUP_DURATION) },
                                 suffix = { Text("s") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
@@ -377,7 +400,7 @@ fun CreateTabataScreen(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = "Number of Rounds: $rounds",
+                                    text = CreateTabataScreenConstants.numberOfRounds(rounds),
                                     style = MaterialTheme.typography.titleSmall,
                                     fontWeight = FontWeight.Bold
                                 )
@@ -387,14 +410,20 @@ fun CreateTabataScreen(
                                         onClick = { if (rounds > 1) rounds -= 1 },
                                         modifier = Modifier.size(36.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Remove, contentDescription = "Decrease rounds")
+                                        Icon(
+                                            imageVector = Icons.Default.Remove,
+                                            contentDescription = CreateTabataScreenConstants.CD_DECREASE_ROUNDS
+                                        )
                                     }
                                     Spacer(modifier = Modifier.width(8.dp))
                                     FilledTonalIconButton(
                                         onClick = { if (rounds < 12) rounds += 1 },
                                         modifier = Modifier.size(36.dp)
                                     ) {
-                                        Icon(imageVector = Icons.Default.Add, contentDescription = "Increase rounds")
+                                        Icon(
+                                            imageVector = Icons.Default.Add,
+                                            contentDescription = CreateTabataScreenConstants.CD_INCREASE_ROUNDS
+                                        )
                                     }
                                 }
                             }
@@ -464,7 +493,7 @@ fun CreateTabataScreen(
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                         ) {
                             Text(
-                                text = "❄️ Cool-Down Block",
+                                text = CreateTabataScreenConstants.TITLE_COOLDOWN_BLOCK,
                                 style = MaterialTheme.typography.titleSmall,
                                 fontWeight = FontWeight.Bold
                             )
@@ -472,7 +501,7 @@ fun CreateTabataScreen(
                             OutlinedTextField(
                                 value = cooldownSecondsText,
                                 onValueChange = { cooldownSecondsText = it.filter { c -> c.isDigit() } },
-                                label = { Text("Cool-Down Duration") },
+                                label = { Text(CreateTabataScreenConstants.LABEL_COOLDOWN_DURATION) },
                                 suffix = { Text("s") },
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(
@@ -634,7 +663,7 @@ fun CreateTabataScreen(
                                             IconButton(onClick = { editingExerciseIndex = index }) {
                                                 Icon(
                                                     imageVector = Icons.Default.Edit,
-                                                    contentDescription = "Edit exercise",
+                                                    contentDescription = CreateTabataScreenConstants.CD_EDIT_EXERCISE,
                                                     tint = MaterialTheme.colorScheme.primary
                                                 )
                                             }
@@ -650,7 +679,7 @@ fun CreateTabataScreen(
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.ArrowUpward,
-                                                    contentDescription = "Move exercise up"
+                                                    contentDescription = CreateTabataScreenConstants.CD_MOVE_EXERCISE_UP
                                                 )
                                             }
 
@@ -665,14 +694,14 @@ fun CreateTabataScreen(
                                             ) {
                                                 Icon(
                                                     imageVector = Icons.Default.ArrowDownward,
-                                                    contentDescription = "Move exercise down"
+                                                    contentDescription = CreateTabataScreenConstants.CD_MOVE_EXERCISE_DOWN
                                                 )
                                             }
 
                                             IconButton(onClick = { exercises.removeAt(index) }) {
                                                 Icon(
                                                     imageVector = Icons.Default.Close,
-                                                    contentDescription = "Remove exercise",
+                                                    contentDescription = CreateTabataScreenConstants.CD_REMOVE_EXERCISE,
                                                     tint = MaterialTheme.colorScheme.error
                                                 )
                                             }
@@ -696,7 +725,7 @@ fun CreateTabataScreen(
                         )
                         Spacer(modifier = Modifier.width(8.dp))
                         Text(
-                            text = "Add Exercise",
+                            text = CreateTabataScreenConstants.ACTION_ADD_EXERCISE,
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.SemiBold
                         )
