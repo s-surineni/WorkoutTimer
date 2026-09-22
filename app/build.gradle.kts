@@ -1,8 +1,46 @@
+import com.github.triplet.gradle.androidpublisher.ReleaseStatus
+import java.io.FileInputStream
+import java.util.Properties
+
 plugins {
   alias(libs.plugins.android.application)
   alias(libs.plugins.compose.compiler)
   alias(libs.plugins.kotlin.serialization)
   alias(libs.plugins.ksp)
+  alias(libs.plugins.gpp)
+}
+
+val keystorePropertiesFile = rootProject.file("keystore.properties")
+val keystoreProperties = Properties()
+if (keystorePropertiesFile.exists()) {
+    try {
+        keystoreProperties.load(FileInputStream(keystorePropertiesFile))
+    } catch (_: Exception) {}
+}
+
+val releaseStoreFilePath = keystoreProperties.getProperty("storeFile")?.takeIf { it.isNotBlank() }
+    ?: "workouttimer-upload-key.jks"
+val releaseStoreFile = if (releaseStoreFilePath.startsWith("/")) file(releaseStoreFilePath) else rootProject.file(releaseStoreFilePath)
+val releaseStorePassword = keystoreProperties.getProperty("storePassword")?.takeIf { it.isNotBlank() }
+    ?: System.getenv("KEYSTORE_PASSWORD")
+    ?: "workouttimerInternalPass2026"
+val releaseKeyAlias = keystoreProperties.getProperty("keyAlias")?.takeIf { it.isNotBlank() }
+    ?: System.getenv("KEY_ALIAS")
+    ?: "workouttimer_upload"
+val releaseKeyPassword = keystoreProperties.getProperty("keyPassword")?.takeIf { it.isNotBlank() }
+    ?: System.getenv("KEY_PASSWORD")
+    ?: "workouttimerInternalPass2026"
+
+play {
+  track.set("internal")
+  releaseStatus.set(ReleaseStatus.COMPLETED)
+  val serviceAccountFile = file("play-service-account.json")
+  val rootServiceAccountFile = rootProject.file("play-service-account.json")
+  if (serviceAccountFile.exists()) {
+    serviceAccountCredentials.set(serviceAccountFile)
+  } else if (rootServiceAccountFile.exists()) {
+    serviceAccountCredentials.set(rootServiceAccountFile)
+  }
 }
 
 android {
@@ -12,10 +50,19 @@ android {
         applicationId = "sampath.workouttimer"
         minSdk = 24
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
         versionCode = 2
         versionName = "1.0.1"
+    }
+
+    signingConfigs {
+        create("release") {
+            if (releaseStoreFile.exists()) {
+                storeFile = releaseStoreFile
+                storePassword = releaseStorePassword
+                keyAlias = releaseKeyAlias
+                keyPassword = releaseKeyPassword
+            }
+        }
     }
 
     buildTypes {
@@ -25,6 +72,9 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            if (releaseStoreFile.exists()) {
+                signingConfig = signingConfigs.getByName("release")
+            }
         }
     }
     compileOptions {

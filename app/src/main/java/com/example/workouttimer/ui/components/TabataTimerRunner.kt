@@ -5,6 +5,10 @@ import android.view.WindowManager
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateColorAsState
+import androidx.compose.animation.core.Spring
+import androidx.compose.animation.core.animateDpAsState
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.expandVertically
 import androidx.compose.animation.fadeIn
@@ -38,6 +42,7 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Replay
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.material3.Icon
@@ -60,8 +65,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -78,6 +89,7 @@ import com.example.workouttimer.audio.NoOpAudioFeedbackManager
 import com.example.workouttimer.audio.ToneAudioFeedbackManager
 import com.example.workouttimer.data.Exercise
 import com.example.workouttimer.data.Workout
+import com.example.workouttimer.theme.TimerNumberStyle
 import com.example.workouttimer.theme.WorkoutTimerTheme
 import kotlinx.coroutines.delay
 
@@ -97,6 +109,7 @@ object TabataTimerRunnerConstants {
     const val ANIM_LABEL_PHASE_COLOR = "phaseColor"
     const val ANIM_LABEL_CARD_CONTAINER_COLOR = "cardContainerColor"
     const val ANIM_LABEL_ON_CARD_COLOR = "onCardColor"
+    const val ANIM_LABEL_PULSE_SCALE = "pulseScale"
 
     // Phase badge labels
     const val LABEL_GET_READY = "GET READY"
@@ -106,10 +119,12 @@ object TabataTimerRunnerConstants {
     const val LABEL_ROUND_REST = "ROUND REST"
     const val LABEL_COOLDOWN = "COOL-DOWN"
     const val LABEL_FINISHED = "FINISHED!"
+    const val LABEL_COMING_UP_NEXT = "COMING UP NEXT"
 
     // Exercise & Phase display titles
     const val TITLE_WORKOUT_COMPLETE = "Workout Complete!"
     const val TITLE_WARMUP_MOBILIZE = "Warm-Up & Mobilize"
+    const val TITLE_REST_RECOVER = "Rest & Recover"
     const val TITLE_CATCH_BREATH = "Catch Your Breath"
     const val TITLE_COOLDOWN_STRETCH = "Cool-Down & Stretch"
 
@@ -133,6 +148,7 @@ object TabataTimerRunnerConstants {
     const val CD_RESET_WORKOUT = "Reset Workout"
     const val CD_PAUSE = "Pause"
     const val CD_PLAY = "Play"
+    const val CD_INTERVAL_TIMELINE = "Interval sequence timeline"
 
     // Up next indicators
     const val TEXT_FINAL_EXERCISE = "Final Exercise!"
@@ -158,6 +174,15 @@ object TabataTimerRunnerConstants {
 
     fun upNextExercise(name: String, seconds: Int): String =
         "Up Next: $name (${seconds}s)"
+
+    fun phaseTotalDurationLabel(seconds: Int): String =
+        "/ ${seconds}s"
+
+    fun intervalSegmentDescription(index: Int, name: String, isCompleted: Boolean, isActive: Boolean): String = when {
+        isCompleted -> "Exercise ${index + 1}: $name (Completed)"
+        isActive -> "Exercise ${index + 1}: $name (Current Interval)"
+        else -> "Exercise ${index + 1}: $name (Upcoming)"
+    }
 }
 
 /**
@@ -179,6 +204,7 @@ fun TabataTimerRunner(
     }
 
     val context = LocalContext.current
+    val haptic = LocalHapticFeedback.current
 
     DisposableEffect(audioFeedbackManager) {
         onDispose {
@@ -374,9 +400,12 @@ fun TabataTimerRunner(
     LaunchedEffect(isRunning, phase, timeLeft) {
         if (!isRunning || phase == TabataPhase.COMPLETED) return@LaunchedEffect
 
-        // Play 3-2-1 beep during countdown or last 3 seconds of any phase
-        if (isSoundEnabled && timeLeft in 1..3) {
-            audioFeedbackManager.playCountdownTick()
+        // Play 3-2-1 beep and trigger tactile haptic tick during countdown or last 3 seconds of any phase
+        if (timeLeft in 1..3) {
+            if (isSoundEnabled) {
+                audioFeedbackManager.playCountdownTick()
+            }
+            haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
         }
 
         delay(1000L)
@@ -386,6 +415,23 @@ fun TabataTimerRunner(
             moveToNext()
         }
     }
+
+    // Haptic feedback on interval phase transitions
+    LaunchedEffect(phase) {
+        if (phase != TabataPhase.PREPARE) {
+            haptic.performHapticFeedback(HapticFeedbackType.LongPress)
+        }
+    }
+
+    val isUrgentTick = isRunning && timeLeft in 1..3 && phase != TabataPhase.COMPLETED
+    val pulseScale by animateFloatAsState(
+        targetValue = if (isUrgentTick) 1.12f else 1.0f,
+        animationSpec = spring(
+            dampingRatio = Spring.DampingRatioMediumBouncy,
+            stiffness = Spring.StiffnessMedium
+        ),
+        label = TabataTimerRunnerConstants.ANIM_LABEL_PULSE_SCALE
+    )
 
     val progressRatio by remember(timeLeft, totalPhaseDuration) {
         derivedStateOf {
@@ -580,10 +626,9 @@ fun TabataTimerRunner(
                             )
                         }
 
-                        Spacer(modifier = Modifier.height(20.dp))
-
-                        // Exercise Name / Phase Title
+                        // Exercise Name / Phase Title & Circular Countdown Display
                         if (phase == TabataPhase.COMPLETED) {
+                            Spacer(modifier = Modifier.height(20.dp))
                             Icon(
                                 imageVector = Icons.Default.CheckCircle,
                                 contentDescription = null,
@@ -598,12 +643,28 @@ fun TabataTimerRunner(
                                 color = onCardColor,
                                 textAlign = TextAlign.Center
                             )
+                            Spacer(modifier = Modifier.height(20.dp))
                         } else {
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            // Interval sequence timeline
+                            IntervalTimelineRow(
+                                totalExercises = workout.exercises.size,
+                                currentExerciseIndex = currentExerciseIndex,
+                                phase = phase,
+                                exercises = workout.exercises,
+                                phaseColor = phaseColor,
+                                onCardColor = onCardColor
+                            )
+
+                            Spacer(modifier = Modifier.height(12.dp))
+
                             Text(
                                 text = when (phase) {
                                     TabataPhase.PREPARE -> if (workout.warmupSeconds > 0) TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE else currentExercise.name
                                     TabataPhase.WARMUP -> TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE
                                     TabataPhase.REST -> nextExercise?.name ?: currentExercise.name
+                                    TabataPhase.REST -> TabataTimerRunnerConstants.TITLE_REST_RECOVER
                                     TabataPhase.ROUND_REST -> TabataTimerRunnerConstants.TITLE_CATCH_BREATH
                                     TabataPhase.COOLDOWN -> TabataTimerRunnerConstants.TITLE_COOLDOWN_STRETCH
                                     else -> currentExercise.name
@@ -615,32 +676,51 @@ fun TabataTimerRunner(
                                 modifier = Modifier.fillMaxWidth()
                             )
 
-                            Spacer(modifier = Modifier.height(16.dp))
+                            Spacer(modifier = Modifier.height(14.dp))
 
-                            // Large Seconds Display
-                            Text(
-                                text = "$timeLeft",
-                                fontSize = 88.sp,
-                                fontWeight = FontWeight.Black,
-                                color = phaseColor,
-                                lineHeight = 92.sp
-                            )
+                            // Circular Radial Gauge & Seconds Countdown Display with Tabular Figures
+                            Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier
+                                    .size(200.dp)
+                                    .padding(4.dp)
+                            ) {
+                                CircularProgressIndicator(
+                                    progress = { progressRatio.coerceIn(0f, 1f) },
+                                    modifier = Modifier.fillMaxSize(),
+                                    color = phaseColor,
+                                    trackColor = phaseColor.copy(alpha = 0.18f),
+                                    strokeWidth = 12.dp,
+                                    strokeCap = StrokeCap.Round
+                                )
+
+                                Column(
+                                    horizontalAlignment = Alignment.CenterHorizontally,
+                                    verticalArrangement = Arrangement.Center,
+                                    modifier = Modifier.graphicsLayer {
+                                        scaleX = pulseScale
+                                        scaleY = pulseScale
+                                    }
+                                ) {
+                                    Text(
+                                        text = "$timeLeft",
+                                        style = TimerNumberStyle,
+                                        color = phaseColor,
+                                        textAlign = TextAlign.Center
+                                    )
+                                    if (totalPhaseDuration > 0) {
+                                        Text(
+                                            text = TabataTimerRunnerConstants.phaseTotalDurationLabel(totalPhaseDuration),
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Bold,
+                                            color = onCardColor.copy(alpha = 0.7f)
+                                        )
+                                    }
+                                }
+                            }
+
+                            Spacer(modifier = Modifier.height(14.dp))
                         }
-
-                        Spacer(modifier = Modifier.height(16.dp))
-
-                        // Phase Progress
-                        LinearProgressIndicator(
-                            progress = { progressRatio.coerceIn(0f, 1f) },
-                            color = phaseColor,
-                            trackColor = phaseColor.copy(alpha = 0.2f),
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(10.dp)
-                                .clip(RoundedCornerShape(5.dp))
-                        )
-
-                        Spacer(modifier = Modifier.height(16.dp))
 
                         // Next exercise preview
                         if (phase != TabataPhase.COMPLETED) {
@@ -664,6 +744,8 @@ fun TabataTimerRunner(
                                     TabataTimerRunnerConstants.TEXT_FINAL_EXERCISE
                                 nextExercise != null && phase == TabataPhase.WORK && currentExercise.restSeconds > 0 ->
                                     TabataTimerRunnerConstants.upNextRest(currentExercise.restSeconds)
+                                phase == TabataPhase.REST && nextExercise != null ->
+                                    TabataTimerRunnerConstants.upNextExercise(nextExercise.name, nextExercise.workSeconds)
                                 phase == TabataPhase.REST -> null
                                 nextExercise != null ->
                                     TabataTimerRunnerConstants.upNextExercise(nextExercise.name, nextExercise.workSeconds)
@@ -797,6 +879,71 @@ fun TabataTimerRunner(
                     }
                 }
             }
+        }
+    }
+}
+
+/**
+ * Visual capsule / dot indicators showing progress through the exercises in the current round.
+ */
+@Composable
+fun IntervalTimelineRow(
+    totalExercises: Int,
+    currentExerciseIndex: Int,
+    phase: TabataPhase,
+    exercises: List<Exercise>,
+    phaseColor: Color,
+    onCardColor: Color,
+    modifier: Modifier = Modifier
+) {
+    if (totalExercises <= 1 && phase != TabataPhase.WARMUP && phase != TabataPhase.COOLDOWN) return
+
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .semantics { contentDescription = TabataTimerRunnerConstants.CD_INTERVAL_TIMELINE },
+        horizontalArrangement = Arrangement.Center,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        exercises.forEachIndexed { index, exercise ->
+            val isCompleted = when {
+                phase == TabataPhase.COMPLETED || phase == TabataPhase.COOLDOWN -> true
+                phase == TabataPhase.ROUND_REST -> true
+                phase == TabataPhase.WARMUP || phase == TabataPhase.PREPARE -> false
+                else -> index < currentExerciseIndex
+            }
+            val isActive = when {
+                phase == TabataPhase.WORK || phase == TabataPhase.REST -> index == currentExerciseIndex
+                else -> false
+            }
+
+            val segmentDescription = TabataTimerRunnerConstants.intervalSegmentDescription(
+                index = index,
+                name = exercise.name,
+                isCompleted = isCompleted,
+                isActive = isActive
+            )
+
+            val segmentWidth by animateDpAsState(
+                targetValue = if (isActive) 24.dp else 10.dp,
+                label = "segmentWidth"
+            )
+
+            Box(
+                modifier = Modifier
+                    .padding(horizontal = 3.dp)
+                    .height(6.dp)
+                    .width(segmentWidth)
+                    .clip(RoundedCornerShape(3.dp))
+                    .background(
+                        when {
+                            isActive -> phaseColor
+                            isCompleted -> phaseColor.copy(alpha = 0.55f)
+                            else -> onCardColor.copy(alpha = 0.2f)
+                        }
+                    )
+                    .semantics { contentDescription = segmentDescription }
+            )
         }
     }
 }

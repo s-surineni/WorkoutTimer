@@ -22,5 +22,6 @@ adb -s "$EMULATOR_SERIAL" install -r app/build/outputs/apk/debug/app-debug.apk >
 adb -s "$EMULATOR_SERIAL" install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk > /dev/null
 
 echo "🧪 Running Instrumented Tests on $EMULATOR_SERIAL..."
-adb -s "$EMULATOR_SERIAL" shell am instrument -w -r com.example.workouttimer.test/androidx.test.runner.AndroidJUnitRunner
+TEST_RUNNER=$(adb -s "$EMULATOR_SERIAL" shell pm list instrumentation | grep -E 'workouttimer.*AndroidJUnitRunner' | head -n 1 | cut -d: -f2 | awk '{print $1}')
+adb -s "$EMULATOR_SERIAL" shell am instrument -w -r "${TEST_RUNNER:-sampath.workouttimer.test/androidx.test.runner.AndroidJUnitRunner}"
 
