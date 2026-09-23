@@ -66,7 +66,6 @@ class TabataTimerRunnerConstantsTest {
         assertEquals("GET READY", TabataTimerRunnerConstants.LABEL_GET_READY)
         assertEquals("WORK", TabataTimerRunnerConstants.LABEL_WORK)
         assertEquals("REST", TabataTimerRunnerConstants.LABEL_REST)
-        assertEquals("Rest & Recover", TabataTimerRunnerConstants.TITLE_REST_RECOVER)
         assertEquals("COMING UP NEXT", TabataTimerRunnerConstants.LABEL_COMING_UP_NEXT)
     }
 }

@@ -35,11 +35,14 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.FastForward
 import androidx.compose.material.icons.filled.FastRewind
+import androidx.compose.material.icons.filled.FitnessCenter
 import androidx.compose.material.icons.filled.Lock
 import androidx.compose.material.icons.filled.LockOpen
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
+import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.Replay
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CircularProgressIndicator
@@ -67,6 +70,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalHapticFeedback
@@ -75,6 +79,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -150,10 +155,25 @@ object TabataTimerRunnerConstants {
     const val CD_PLAY = "Play"
     const val CD_INTERVAL_TIMELINE = "Interval sequence timeline"
 
+    // Progress indicators
+    const val LABEL_ROUND = "Round"
+    const val LABEL_EXERCISE = "Exercise"
+    const val LABEL_PHASE = "Phase"
+    const val LABEL_STATUS = "Status"
+
     // Up next indicators
     const val TEXT_FINAL_EXERCISE = "Final Exercise!"
 
     // Dynamic text helpers
+    fun formatRatio(current: Int, total: Int): String =
+        "$current of $total"
+
+    fun formatRoundProgress(currentRound: Int, totalRounds: Int): String =
+        "Round $currentRound of $totalRounds"
+
+    fun formatExerciseProgress(currentExerciseIndex: Int, totalExercises: Int): String =
+        "Exercise ${currentExerciseIndex + 1} of $totalExercises"
+
     fun subtitleGettingReady(totalRounds: Int): String =
         "Round 1 of $totalRounds • Getting Ready"
 
@@ -532,61 +552,65 @@ fun TabataTimerRunner(
                 horizontalAlignment = Alignment.CenterHorizontally,
                 verticalArrangement = Arrangement.SpaceBetween
             ) {
-                // Top header: Routine title, Lock toggle, Sound toggle & Close button
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column(modifier = Modifier.weight(1f, fill = false)) {
+                // Top Section: Routine title, Lock toggle, Sound toggle, Close button, and Progress Status Chips
+                Column(modifier = Modifier.fillMaxWidth()) {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
                         Text(
                             text = workout.title,
                             style = MaterialTheme.typography.titleLarge,
-                            fontWeight = FontWeight.Bold
+                            fontWeight = FontWeight.Bold,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.weight(1f, fill = false)
                         )
-                        Text(
-                            text = when (phase) {
-                                TabataPhase.PREPARE -> if (workout.warmupSeconds > 0) TabataTimerRunnerConstants.SUBTITLE_WARMUP_PHASE else TabataTimerRunnerConstants.subtitleGettingReady(workout.rounds)
-                                TabataPhase.WARMUP -> TabataTimerRunnerConstants.SUBTITLE_WARMUP_PHASE
-                                TabataPhase.COOLDOWN -> TabataTimerRunnerConstants.SUBTITLE_COOLDOWN_PHASE
-                                TabataPhase.COMPLETED -> TabataTimerRunnerConstants.SUBTITLE_WORKOUT_FINISHED
-                                else -> TabataTimerRunnerConstants.subtitleRoundProgress(currentRound, workout.rounds, currentExerciseIndex, workout.exercises.size)
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            IconButton(
+                                onClick = { isScreenLocked = !isScreenLocked },
+                                enabled = phase != TabataPhase.COMPLETED
+                            ) {
+                                Icon(
+                                    imageVector = if (isScreenLocked) Icons.Default.Lock else Icons.Default.LockOpen,
+                                    contentDescription = if (isScreenLocked) TabataTimerRunnerConstants.CD_UNLOCK_SCREEN else TabataTimerRunnerConstants.CD_LOCK_SCREEN,
+                                    tint = if (isScreenLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
+                                )
+                            }
+                            IconButton(
+                                onClick = { isSoundEnabled = !isSoundEnabled },
+                                enabled = !isScreenLocked
+                            ) {
+                                Icon(
+                                    imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
+                                    contentDescription = if (isSoundEnabled) TabataTimerRunnerConstants.CD_MUTE_SOUND else TabataTimerRunnerConstants.CD_UNMUTE_SOUND
+                                )
+                            }
+                            IconButton(
+                                onClick = onDismiss,
+                                enabled = !isScreenLocked
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Close,
+                                    contentDescription = TabataTimerRunnerConstants.CD_CLOSE_TIMER
+                                )
+                            }
+                        }
                     }
 
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        IconButton(
-                            onClick = { isScreenLocked = !isScreenLocked },
-                            enabled = phase != TabataPhase.COMPLETED
-                        ) {
-                            Icon(
-                                imageVector = if (isScreenLocked) Icons.Default.Lock else Icons.Default.LockOpen,
-                                contentDescription = if (isScreenLocked) TabataTimerRunnerConstants.CD_UNLOCK_SCREEN else TabataTimerRunnerConstants.CD_LOCK_SCREEN,
-                                tint = if (isScreenLocked) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                        IconButton(
-                            onClick = { isSoundEnabled = !isSoundEnabled },
-                            enabled = !isScreenLocked
-                        ) {
-                            Icon(
-                                imageVector = if (isSoundEnabled) Icons.AutoMirrored.Filled.VolumeUp else Icons.AutoMirrored.Filled.VolumeOff,
-                                contentDescription = if (isSoundEnabled) TabataTimerRunnerConstants.CD_MUTE_SOUND else TabataTimerRunnerConstants.CD_UNMUTE_SOUND
-                            )
-                        }
-                        IconButton(
-                            onClick = onDismiss,
-                            enabled = !isScreenLocked
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = TabataTimerRunnerConstants.CD_CLOSE_TIMER
-                            )
-                        }
-                    }
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // Progress Status Row: dedicated Round and Exercise position chips
+                    WorkoutProgressStatusRow(
+                        phase = phase,
+                        currentRound = currentRound,
+                        totalRounds = workout.rounds,
+                        currentExerciseIndex = currentExerciseIndex,
+                        totalExercises = workout.exercises.size,
+                        warmupSeconds = workout.warmupSeconds
+                    )
                 }
 
                 // Middle: Phase card & countdown clock with distinct Work/Rest/Warmup/Cooldown color theme
@@ -663,7 +687,6 @@ fun TabataTimerRunner(
                                 text = when (phase) {
                                     TabataPhase.PREPARE -> if (workout.warmupSeconds > 0) TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE else currentExercise.name
                                     TabataPhase.WARMUP -> TabataTimerRunnerConstants.TITLE_WARMUP_MOBILIZE
-                                    TabataPhase.REST -> nextExercise?.name ?: currentExercise.name
                                     TabataPhase.REST -> TabataTimerRunnerConstants.TITLE_REST_RECOVER
                                     TabataPhase.ROUND_REST -> TabataTimerRunnerConstants.TITLE_CATCH_BREATH
                                     TabataPhase.COOLDOWN -> TabataTimerRunnerConstants.TITLE_COOLDOWN_STRETCH
@@ -943,6 +966,189 @@ fun IntervalTimelineRow(
                         }
                     )
                     .semantics { contentDescription = segmentDescription }
+            )
+        }
+    }
+}
+
+/**
+ * Polished status chips displaying current round and current exercise position
+ * (or active phase indicators during Warm-Up, Cool-Down, and Completion).
+ */
+@Composable
+fun WorkoutProgressStatusRow(
+    phase: TabataPhase,
+    currentRound: Int,
+    totalRounds: Int,
+    currentExerciseIndex: Int,
+    totalExercises: Int,
+    warmupSeconds: Int,
+    modifier: Modifier = Modifier
+) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        val showExercisePosition = when (phase) {
+            TabataPhase.PREPARE -> warmupSeconds == 0
+            TabataPhase.WORK, TabataPhase.REST -> true
+            else -> false
+        }
+
+        when {
+            showExercisePosition -> {
+                ProgressBadge(
+                    icon = Icons.Default.Repeat,
+                    label = TabataTimerRunnerConstants.LABEL_ROUND,
+                    value = TabataTimerRunnerConstants.formatRatio(currentRound, totalRounds),
+                    contentDescription = TabataTimerRunnerConstants.formatRoundProgress(currentRound, totalRounds)
+                )
+
+                ProgressBadge(
+                    icon = Icons.Default.FitnessCenter,
+                    label = TabataTimerRunnerConstants.LABEL_EXERCISE,
+                    value = TabataTimerRunnerConstants.formatRatio(currentExerciseIndex + 1, totalExercises),
+                    contentDescription = TabataTimerRunnerConstants.formatExerciseProgress(currentExerciseIndex, totalExercises)
+                )
+            }
+            phase == TabataPhase.ROUND_REST -> {
+                ProgressBadge(
+                    icon = Icons.Default.Repeat,
+                    label = TabataTimerRunnerConstants.LABEL_ROUND,
+                    value = TabataTimerRunnerConstants.formatRatio(currentRound, totalRounds),
+                    contentDescription = TabataTimerRunnerConstants.formatRoundProgress(currentRound, totalRounds)
+                )
+                ProgressBadge(
+                    icon = Icons.Default.Timer,
+                    label = TabataTimerRunnerConstants.LABEL_PHASE,
+                    value = TabataTimerRunnerConstants.LABEL_ROUND_REST,
+                    contentDescription = TabataTimerRunnerConstants.LABEL_ROUND_REST
+                )
+            }
+            phase == TabataPhase.WARMUP || (phase == TabataPhase.PREPARE && warmupSeconds > 0) -> {
+                Surface(
+                    modifier = Modifier.semantics { contentDescription = TabataTimerRunnerConstants.SUBTITLE_WARMUP_PHASE },
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = TabataTimerRunnerConstants.SUBTITLE_WARMUP_PHASE,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            phase == TabataPhase.COOLDOWN -> {
+                Surface(
+                    modifier = Modifier.semantics { contentDescription = TabataTimerRunnerConstants.SUBTITLE_COOLDOWN_PHASE },
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Timer,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = TabataTimerRunnerConstants.SUBTITLE_COOLDOWN_PHASE,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            phase == TabataPhase.COMPLETED -> {
+                Surface(
+                    modifier = Modifier.semantics { contentDescription = TabataTimerRunnerConstants.SUBTITLE_WORKOUT_FINISHED },
+                    shape = RoundedCornerShape(10.dp),
+                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                    contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+                ) {
+                    Row(
+                        modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(6.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.CheckCircle,
+                            contentDescription = null,
+                            modifier = Modifier.size(15.dp),
+                            tint = MaterialTheme.colorScheme.primary
+                        )
+                        Text(
+                            text = TabataTimerRunnerConstants.SUBTITLE_WORKOUT_FINISHED,
+                            style = MaterialTheme.typography.labelMedium,
+                            fontWeight = FontWeight.Medium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProgressBadge(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    contentDescription: String,
+    modifier: Modifier = Modifier
+) {
+    Surface(
+        modifier = modifier.semantics { this.contentDescription = contentDescription },
+        shape = RoundedCornerShape(10.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                imageVector = icon,
+                contentDescription = null,
+                modifier = Modifier.size(15.dp),
+                tint = MaterialTheme.colorScheme.primary
+            )
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                text = value,
+                style = MaterialTheme.typography.labelMedium.copy(
+                    fontWeight = FontWeight.Bold,
+                    fontFeatureSettings = "tnum"
+                ),
+                color = MaterialTheme.colorScheme.onSurface
             )
         }
     }

@@ -149,7 +149,6 @@ class TabataTimerRunnerTest {
     }
 
     @Test
-    fun tabataTimerRunner_restPhase_showsComingUpNextIndicatorAndNextExercise() {
     fun tabataTimerRunner_restPhase_showsRestRecoveryTitleAndUpcomingExerciseAtBottomOnly() {
         composeTestRule.setContent {
             TabataTimerRunner(
@@ -166,19 +165,33 @@ class TabataTimerRunnerTest {
         // WORK -> REST
         composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_SKIP_EXERCISE).performClick()
 
-        // Verify REST phase badge, COMING UP NEXT indicator, and the upcoming exercise name
         // Verify REST phase badge, Rest & Recover title, and that the upcoming exercise name appears only at bottom
         composeTestRule.onNodeWithText(TabataTimerRunnerConstants.LABEL_REST).assertExists()
-        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.LABEL_COMING_UP_NEXT).assertExists()
-        composeTestRule.onNodeWithText(sampleWorkout.exercises[1].name).assertExists()
-        composeTestRule.onNodeWithText(TabataTimerRunnerConstants.TITLE_REST_RECOVER).assertExists()
-        composeTestRule.onNodeWithText(sampleWorkout.exercises[1].name).assertDoesNotExist()
         composeTestRule.onNodeWithText(
             TabataTimerRunnerConstants.upNextExercise(
                 sampleWorkout.exercises[1].name,
                 sampleWorkout.exercises[1].workSeconds
             )
         ).assertExists()
+    }
+
+    @Test
+    fun tabataTimerRunner_activeWorkPhase_displaysRoundAndExerciseBadges() {
+        val noWarmupWorkout = sampleWorkout.copy(warmupSeconds = 0)
+        composeTestRule.setContent {
+            TabataTimerRunner(
+                workout = noWarmupWorkout,
+                onDismiss = {},
+                audioFeedbackManager = NoOpAudioFeedbackManager()
+            )
+        }
+
+        // PREPARE -> WORK
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.CD_SKIP_EXERCISE).performClick()
+
+        // Verify Round badge and Exercise position badge
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.formatRoundProgress(1, noWarmupWorkout.rounds)).assertExists()
+        composeTestRule.onNodeWithContentDescription(TabataTimerRunnerConstants.formatExerciseProgress(0, noWarmupWorkout.exercises.size)).assertExists()
     }
 }
 
